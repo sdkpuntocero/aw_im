@@ -15,6 +15,6 @@ namespace aw_im
     {
         public string Tipo { get; set; }
         public Nullable<int> d_count { get; set; }
-        public Nullable<double> dd_sum { get; set; }
+        public Nullable<decimal> dd_sum { get; set; }
     }
 }

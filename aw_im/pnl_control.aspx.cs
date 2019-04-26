@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Microsoft.Reporting.WebForms;
+using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using System.Web.Security;
 using System.Web.Services;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -15,28 +18,33 @@ namespace aw_im
     public partial class pnl_control : System.Web.UI.Page
     {
         public static Guid empf_ID = Guid.Empty, usr_ID = Guid.Empty, usrf_ID = Guid.Empty, cnt_f = Guid.Empty, inv_f = Guid.Empty, comp_f = Guid.Empty, prov_f = Guid.Empty, clte_f = Guid.Empty, vnta_f = Guid.Empty;
-
-        static private int int_idperf = 0, est_usr = 0, est_cnt = 0, est_inv = 0, est_comp = 0, est_prov = 0, est_clte = 0, est_vnta = 0;
-        private static string str_pnlID = string.Empty;
-
         public static DataTable tbl_vnta_inv;
+        public static int int_idperf = 0, est_usr = 0, est_cnt = 0, est_inv = 0, est_comp = 0, est_prov = 0, est_clte = 0, est_vnta = 0;
+        public static string str_pnlID = string.Empty, nombre_rpt = string.Empty;
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            try
+            if (Session["ss_idusr"] == null)
+            {
+                FormsAuthentication.SignOut();
+                Response.Redirect("acceso.aspx");
+            }
+            else
             {
                 if (!IsPostBack)
                 {
                     inf_usr_oper();
-                    inf_totales();
+                    try
+                    {
+                        inf_totales();
+                    }
+                    catch
+                    {
+                    }
                 }
                 else
                 {
                 }
-            }
-            catch
-            {
-                Response.Redirect("acceso.aspx");
             }
         }
 
@@ -57,16 +65,16 @@ namespace aw_im
                 string t_cout_comp = i_usuario[1].d_count.ToString();
                 string t_sum_comp = i_usuario[1].dd_sum.ToString();
 
-                LinkButton1.Text =  t_cout_clte;
-                LinkButton2.Text =  t_cout_vnta + ": " + string.Format("{0:C2}", int.Parse(t_sum_vnta));
-                LinkButton3.Text =  t_cout_comp + ": " + string.Format("{0:C2}", int.Parse(t_sum_comp));
-                LinkButton4.Text =  string.Format("{0:C2}", int.Parse(t_sum_vnta) - int.Parse(t_sum_comp));
-                
+                LinkButton1.Text = t_cout_clte;
+                LinkButton2.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
+                LinkButton3.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
+                LinkButton4.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
             }
         }
 
         private void inf_usr_oper()
         {
+            //usr_ID = Guid.Parse(Request.Cookies[1].Value);
             usr_ID = (Guid)(Session["ss_idusr"]);
 
             using (bd_imEntities m_usuario = new bd_imEntities())
@@ -94,8 +102,8 @@ namespace aw_im
                 lkb_usr_fp.Text = i_usuario.perfil_desc;
                 int_idperf = i_usuario.perfil_ID;
                 lkb_usr_fc.Text = i_usuario.centro_nom;
-                empf_ID = Guid.Parse(i_usuario.centro_ID.ToString());
-
+                Session["ss_idcnt"] = Guid.Parse(i_usuario.centro_ID.ToString());
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 switch (int_idperf)
                 {
                     case 1:
@@ -111,6 +119,7 @@ namespace aw_im
                         break;
 
                     case 4:
+
                         li_cnt.Visible = false;
                         li_config.Visible = false;
                         li_inv.Visible = false;
@@ -134,6 +143,13 @@ namespace aw_im
                         li_inv.Visible = false;
                         break;
 
+                    case 8:
+
+                        li_cnt.Visible = false;
+                        li_config.Visible = false;
+                        li_inv.Visible = false;
+                        break;
+
                     default:
 
                         break;
@@ -143,86 +159,32 @@ namespace aw_im
 
         #region empresa_filtro
 
-        private void inf_fc()
+        protected void btn_iemp_Click(object sender, EventArgs e)
         {
-            using (bd_imEntities m_emp = new bd_imEntities())
+            string i_emp_nom = Request.Form["iemp_nom"];
+            string i_email = Request.Form["iemp_email"];
+            string i_tel = Request.Form["iemp_tel"];
+            string i_callenum = Request.Form["iemp_callenum"];
+            string i_cp = Request.Form["iemp_cp"];
+            string i_colonia = Request.Form["iemp_colonia"];
+
+            using (var m_emp = new bd_imEntities())
             {
-                var i_usuariof = (from i_u in m_emp.inf_usuario
-                                  join i_uh in m_emp.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
-                                  where i_uh.usuario_ID == usr_ID
-                                  select new
-                                  {
-                                      i_uh.perfil_ID
-                                  }).FirstOrDefault();
+                var d_emp = (from c in m_emp.inf_centro
+                             where c.centro_ID == empf_ID
+                             select c).FirstOrDefault();
 
-                if (i_usuariof.perfil_ID == 2)
-                {
-                    var d_emp = (from i_e in m_emp.inf_centro
+                d_emp.centro_nom = i_emp_nom;
+                d_emp.email = i_email;
+                d_emp.telefono = i_tel;
+                d_emp.callenum = i_callenum;
+                d_emp.d_codigo = i_cp;
+                d_emp.id_asenta_cpcons = i_colonia;
 
-                                 where i_e.centro_ID == empf_ID
-                                 select new
-                                 {
-                                     i_e.centro_nom,
-                                     i_e.email,
-                                     i_e.telefono,
-                                     i_e.callenum,
-                                     i_e.d_codigo,
-                                     i_e.id_asenta_cpcons
-                                 }).FirstOrDefault();
-
-                    iemp_nom.Value = d_emp.centro_nom;
-                    iemp_tel.Value = d_emp.telefono;
-                    iemp_email.Value = d_emp.email;
-                    iemp_callenum.Value = d_emp.callenum;
-                    iemp_cp.Value = d_emp.d_codigo;
-                    try
-                    {
-                        string f_cp = d_emp.id_asenta_cpcons.ToString();
-
-                        var tbl_sepomex = (from c in m_emp.inf_sepomex
-                                           where c.d_codigo == d_emp.d_codigo
-                                           where c.id_asenta_cpcons == f_cp
-                                           select c).ToList();
-
-                        iemp_colonia.DataSource = tbl_sepomex;
-                        iemp_colonia.DataTextField = "d_asenta";
-                        iemp_colonia.DataValueField = "id_asenta_cpcons";
-                        iemp_colonia.DataBind();
-
-                        if (tbl_sepomex.Count == 0)
-                        {
-                            iemp_callenum.Value = string.Empty;
-                            iemp_cp.Value = string.Empty;
-                            iemp_colonia.Items.Clear();
-                            iemp_colonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
-                            iemp_municipio.Value = string.Empty;
-                            iemp_estado.Value = string.Empty;
-                        }
-                        else
-                        {
-                            iemp_colonia.Value = f_cp;
-                            iemp_municipio.Value = tbl_sepomex[0].d_mnpio;
-                            iemp_estado.Value = tbl_sepomex[0].d_estado;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }
+                m_emp.SaveChanges();
             }
-        }
 
-        private void ctrl_demp()
-        {
-            iemp_nom.Value = string.Empty;
-            iemp_tel.Value = string.Empty;
-            iemp_email.Value = string.Empty;
-            iemp_callenum.Value = string.Empty;
-            iemp_cp.Value = string.Empty;
-            iemp_colonia.Items.Clear();
-            iemp_colonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
-            iemp_municipio.Value = string.Empty;
-            iemp_estado.Value = string.Empty;
+            Mensaje("Datos actualizados con éxito");
         }
 
         protected void btn_iemp_cp_Click(object sender, EventArgs e)
@@ -270,45 +232,94 @@ namespace aw_im
             iemp_colonia.Focus();
         }
 
-        protected void btn_iemp_Click(object sender, EventArgs e)
+        private void ctrl_demp()
         {
-            string i_emp_nom = Request.Form["iemp_nom"];
-            string i_email = Request.Form["iemp_email"];
-            string i_tel = Request.Form["iemp_tel"];
-            string i_callenum = Request.Form["iemp_callenum"];
-            string i_cp = Request.Form["iemp_cp"];
-            string i_colonia = Request.Form["iemp_colonia"];
+            iemp_nom.Value = string.Empty;
+            iemp_tel.Value = string.Empty;
+            iemp_email.Value = string.Empty;
+            iemp_callenum.Value = string.Empty;
+            iemp_cp.Value = string.Empty;
+            iemp_colonia.Items.Clear();
+            iemp_colonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
+            iemp_municipio.Value = string.Empty;
+            iemp_estado.Value = string.Empty;
+        }
 
-            using (var m_emp = new bd_imEntities())
+        private void inf_fc()
+        {
+            using (bd_imEntities m_emp = new bd_imEntities())
             {
-                var d_emp = (from c in m_emp.inf_emp
-                             where c.empresa_ID == empf_ID
-                             select c).FirstOrDefault();
+                var i_usuariof = (from i_u in m_emp.inf_usuario
+                                  join i_uh in m_emp.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
+                                  where i_uh.usuario_ID == usr_ID
+                                  select new
+                                  {
+                                      i_uh.perfil_ID
+                                  }).FirstOrDefault();
 
-                d_emp.empresa_nom = i_emp_nom;
-                d_emp.email = i_email;
-                d_emp.telefono = i_tel;
-                d_emp.callenum = i_callenum;
-                d_emp.d_codigo = i_cp;
-                d_emp.id_asenta_cpcons = i_colonia;
+                var d_emp = (from i_e in m_emp.inf_centro
 
-                m_emp.SaveChanges();
+                             where i_e.centro_ID == empf_ID
+                             select new
+                             {
+                                 i_e.centro_nom,
+                                 i_e.email,
+                                 i_e.telefono,
+                                 i_e.callenum,
+                                 i_e.d_codigo,
+                                 i_e.id_asenta_cpcons
+                             }).FirstOrDefault();
+
+                iemp_nom.Value = d_emp.centro_nom;
+                iemp_tel.Value = d_emp.telefono;
+                iemp_email.Value = d_emp.email;
+                iemp_callenum.Value = d_emp.callenum;
+                iemp_cp.Value = d_emp.d_codigo;
+                try
+                {
+                    string f_cp = d_emp.id_asenta_cpcons.ToString();
+
+                    var tbl_sepomex = (from c in m_emp.inf_sepomex
+                                       where c.d_codigo == d_emp.d_codigo
+                                       where c.id_asenta_cpcons == f_cp
+                                       select c).ToList();
+
+                    iemp_colonia.DataSource = tbl_sepomex;
+                    iemp_colonia.DataTextField = "d_asenta";
+                    iemp_colonia.DataValueField = "id_asenta_cpcons";
+                    iemp_colonia.DataBind();
+
+                    if (tbl_sepomex.Count == 0)
+                    {
+                        iemp_callenum.Value = string.Empty;
+                        iemp_cp.Value = string.Empty;
+                        iemp_colonia.Items.Clear();
+                        iemp_colonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
+                        iemp_municipio.Value = string.Empty;
+                        iemp_estado.Value = string.Empty;
+                    }
+                    else
+                    {
+                        iemp_colonia.Value = f_cp;
+                        iemp_municipio.Value = tbl_sepomex[0].d_mnpio;
+                        iemp_estado.Value = tbl_sepomex[0].d_estado;
+                    }
+                }
+                catch
+                {
+                }
             }
-
-            Mensaje("Datos actualizados con éxito");
         }
 
         #endregion empresa_filtro
 
         #region ctrl_menu_navegación
 
-        protected void lkb_usr_fc_Click(object sender, EventArgs e)
+        protected void lkb_config_Click(object sender, EventArgs e)
         {
-            ctrl_demp();
-            inf_fc();
-
+            ctrl_config();
             card_usrf.Visible = false;
-            card_empf.Visible = true;
+            card_empf.Visible = false;
             card_resumen.Visible = false;
             card_ventas.Visible = false;
             card_compras.Visible = false;
@@ -316,6 +327,41 @@ namespace aw_im
             card_proveedores.Visible = false;
             card_clientes.Visible = false;
             card_centros.Visible = false;
+            card_usr.Visible = false;
+            card_configuracion.Visible = true;
+
+            up_usrf.Update();
+            up_empf.Update();
+            up_resumen.Update();
+            up_ventas.Update();
+            up_compras.Update();
+            up_inventario.Update();
+            up_proveedores.Update();
+            up_clientes.Update();
+            up_centros.Update();
+            up_usr.Update();
+            up_configuracion.Update();
+        }
+
+        protected void lkb_ctrl_centros_Click(object sender, EventArgs e)
+        {
+            str_pnlID = "pnl_cnt";
+            est_cnt = 0;
+            ctrl_cnt();
+
+            i_cnt_buscar.Text = string.Empty;
+            gv_cnt.Visible = false;
+            div_i_cnt.Visible = false;
+
+            card_usrf.Visible = false;
+            card_empf.Visible = false;
+            card_resumen.Visible = false;
+            card_ventas.Visible = false;
+            card_compras.Visible = false;
+            card_inventario.Visible = false;
+            card_proveedores.Visible = false;
+            card_clientes.Visible = false;
+            card_centros.Visible = true;
             card_usr.Visible = false;
             card_configuracion.Visible = false;
 
@@ -332,81 +378,25 @@ namespace aw_im
             up_configuracion.Update();
         }
 
-        protected void lkb_usr_f_Click(object sender, EventArgs e)
+        protected void lkb_ctrl_clte_Click(object sender, EventArgs e)
         {
-            inf_usrf();
+            str_pnlID = "pnl_clte";
 
-            card_usrf.Visible = true;
+            est_clte = 0;
+            ctrl_clte();
+
+            i_clte_buscar.Text = string.Empty;
+            gv_clte.Visible = false;
+            div_i_clte.Visible = false;
+
+            card_usrf.Visible = false;
             card_empf.Visible = false;
             card_resumen.Visible = false;
             card_ventas.Visible = false;
             card_compras.Visible = false;
             card_inventario.Visible = false;
             card_proveedores.Visible = false;
-            card_clientes.Visible = false;
-            card_centros.Visible = false;
-            card_usr.Visible = false;
-            card_configuracion.Visible = false;
-
-            up_usrf.Update();
-            up_empf.Update();
-            up_resumen.Update();
-            up_ventas.Update();
-            up_compras.Update();
-            up_inventario.Update();
-            up_proveedores.Update();
-            up_clientes.Update();
-            up_centros.Update();
-            up_usr.Update();
-            up_configuracion.Update();
-        }
-
-        protected void lkb_resumen_Click(object sender, EventArgs e)
-        {
-            card_usrf.Visible = false;
-            card_empf.Visible = false;
-            card_resumen.Visible = true;
-            card_ventas.Visible = false;
-            card_compras.Visible = false;
-            card_inventario.Visible = false;
-            card_proveedores.Visible = false;
-            card_clientes.Visible = false;
-            card_centros.Visible = false;
-            card_usr.Visible = false;
-            card_configuracion.Visible = false;
-
-            up_usrf.Update();
-            up_empf.Update();
-            up_resumen.Update();
-            up_ventas.Update();
-            up_compras.Update();
-            up_inventario.Update();
-            up_proveedores.Update();
-            up_clientes.Update();
-            up_centros.Update();
-            up_usr.Update();
-            up_configuracion.Update();
-        }
-
-        protected void lkb_ctrl_vnta_Click(object sender, EventArgs e)
-        {
-            str_pnlID = "pnl_vnta";
-
-            est_vnta = 0;
-            ctrl_vnta();
-
-            i_vnta_buscar.Text = string.Empty;
-            gv_vntaff.Visible = false;
-            div_i_vnta.Visible = false;
-
-            card_usrf.Visible = false;
-            card_empf.Visible = false;
-            card_resumen.Visible = false;
-            card_ventas.Visible = true;
-            card_compras.Visible = false;
-            card_inventario.Visible = false;
-            card_proveedores.Visible = false;
-            card_clientes.Visible = false;
+            card_clientes.Visible = true;
             card_centros.Visible = false;
             card_usr.Visible = false;
             card_configuracion.Visible = false;
@@ -532,77 +522,6 @@ namespace aw_im
             up_configuracion.Update();
         }
 
-        protected void lkb_ctrl_clte_Click(object sender, EventArgs e)
-        {
-            str_pnlID = "pnl_clte";
-
-            est_clte = 0;
-            ctrl_clte();
-
-            i_clte_buscar.Text = string.Empty;
-            gv_clte.Visible = false;
-            div_i_clte.Visible = false;
-
-            card_usrf.Visible = false;
-            card_empf.Visible = false;
-            card_resumen.Visible = false;
-            card_ventas.Visible = false;
-            card_compras.Visible = false;
-            card_inventario.Visible = false;
-            card_proveedores.Visible = false;
-            card_clientes.Visible = true;
-            card_centros.Visible = false;
-            card_usr.Visible = false;
-            card_configuracion.Visible = false;
-
-            up_usrf.Update();
-            up_empf.Update();
-            up_resumen.Update();
-            up_ventas.Update();
-            up_compras.Update();
-            up_inventario.Update();
-            up_proveedores.Update();
-            up_clientes.Update();
-            up_centros.Update();
-            up_usr.Update();
-            up_configuracion.Update();
-        }
-
-        protected void lkb_ctrl_centros_Click(object sender, EventArgs e)
-        {
-            str_pnlID = "pnl_cnt";
-            est_cnt = 0;
-            ctrl_cnt();
-
-            i_cnt_buscar.Text = string.Empty;
-            gv_cnt.Visible = false;
-            div_i_cnt.Visible = false;
-
-            card_usrf.Visible = false;
-            card_empf.Visible = false;
-            card_resumen.Visible = false;
-            card_ventas.Visible = false;
-            card_compras.Visible = false;
-            card_inventario.Visible = false;
-            card_proveedores.Visible = false;
-            card_clientes.Visible = false;
-            card_centros.Visible = true;
-            card_usr.Visible = false;
-            card_configuracion.Visible = false;
-
-            up_usrf.Update();
-            up_empf.Update();
-            up_resumen.Update();
-            up_ventas.Update();
-            up_compras.Update();
-            up_inventario.Update();
-            up_proveedores.Update();
-            up_clientes.Update();
-            up_centros.Update();
-            up_usr.Update();
-            up_configuracion.Update();
-        }
-
         protected void lkb_ctrl_usrs_Click(object sender, EventArgs e)
         {
             str_pnlID = "pnl_usr";
@@ -639,20 +558,28 @@ namespace aw_im
             up_configuracion.Update();
         }
 
-        protected void lkb_config_Click(object sender, EventArgs e)
+        protected void lkb_ctrl_vnta_Click(object sender, EventArgs e)
         {
-            ctrl_config();
+            str_pnlID = "pnl_vnta";
+
+            est_vnta = 0;
+            ctrl_vnta();
+
+            i_vnta_buscar.Text = string.Empty;
+            gv_vntaff.Visible = false;
+            div_i_vnta.Visible = false;
+
             card_usrf.Visible = false;
             card_empf.Visible = false;
             card_resumen.Visible = false;
-            card_ventas.Visible = false;
+            card_ventas.Visible = true;
             card_compras.Visible = false;
             card_inventario.Visible = false;
             card_proveedores.Visible = false;
             card_clientes.Visible = false;
             card_centros.Visible = false;
             card_usr.Visible = false;
-            card_configuracion.Visible = true;
+            card_configuracion.Visible = false;
 
             up_usrf.Update();
             up_empf.Update();
@@ -667,10 +594,97 @@ namespace aw_im
             up_configuracion.Update();
         }
 
+        protected void lkb_resumen_Click(object sender, EventArgs e)
+        {
+            card_usrf.Visible = false;
+            card_empf.Visible = false;
+            card_resumen.Visible = true;
+            card_ventas.Visible = false;
+            card_compras.Visible = false;
+            card_inventario.Visible = false;
+            card_proveedores.Visible = false;
+            card_clientes.Visible = false;
+            card_centros.Visible = false;
+            card_usr.Visible = false;
+            card_configuracion.Visible = false;
+
+            up_usrf.Update();
+            up_empf.Update();
+            up_resumen.Update();
+            up_ventas.Update();
+            up_compras.Update();
+            up_inventario.Update();
+            up_proveedores.Update();
+            up_clientes.Update();
+            up_centros.Update();
+            up_usr.Update();
+            up_configuracion.Update();
+            inf_totales();
+        }
+
         protected void lkb_salir_Click(object sender, EventArgs e)
         {
             Session.Abandon();
             Response.Redirect("acceso.aspx");
+        }
+
+        protected void lkb_usr_f_Click(object sender, EventArgs e)
+        {
+            inf_usrf();
+
+            card_usrf.Visible = true;
+            card_empf.Visible = false;
+            card_resumen.Visible = false;
+            card_ventas.Visible = false;
+            card_compras.Visible = false;
+            card_inventario.Visible = false;
+            card_proveedores.Visible = false;
+            card_clientes.Visible = false;
+            card_centros.Visible = false;
+            card_usr.Visible = false;
+            card_configuracion.Visible = false;
+
+            up_usrf.Update();
+            up_empf.Update();
+            up_resumen.Update();
+            up_ventas.Update();
+            up_compras.Update();
+            up_inventario.Update();
+            up_proveedores.Update();
+            up_clientes.Update();
+            up_centros.Update();
+            up_usr.Update();
+            up_configuracion.Update();
+        }
+
+        protected void lkb_usr_fc_Click(object sender, EventArgs e)
+        {
+            ctrl_demp();
+            inf_fc();
+
+            card_usrf.Visible = false;
+            card_empf.Visible = true;
+            card_resumen.Visible = false;
+            card_ventas.Visible = false;
+            card_compras.Visible = false;
+            card_inventario.Visible = false;
+            card_proveedores.Visible = false;
+            card_clientes.Visible = false;
+            card_centros.Visible = false;
+            card_usr.Visible = false;
+            card_configuracion.Visible = false;
+
+            up_usrf.Update();
+            up_empf.Update();
+            up_resumen.Update();
+            up_ventas.Update();
+            up_compras.Update();
+            up_inventario.Update();
+            up_proveedores.Update();
+            up_clientes.Update();
+            up_centros.Update();
+            up_usr.Update();
+            up_configuracion.Update();
         }
 
         #endregion ctrl_menu_navegación
@@ -738,6 +752,60 @@ namespace aw_im
         #region funciones
 
         [WebMethod]
+        public static List<string> busca_clte(string prefixText, int count)
+        {
+            List<String> columnData = new List<String>();
+            string d_f = prefixText.ToUpper();
+
+            using (bd_imEntities m_df = new bd_imEntities())
+            {
+                var i_df = (from i_u in m_df.inf_clte
+
+                            where i_u.nombres.Contains(d_f)
+
+                            select new
+                            {
+                                nom_comp = i_u.nombres + " " + i_u.apaterno + " " + i_u.amaterno,
+                                i_u.cod_clte,
+                            }).ToList();
+
+                foreach (var ff_d in i_df)
+                {
+                    columnData.Add(ff_d.nom_comp + " | " + ff_d.cod_clte);
+                }
+            }
+
+            return columnData;
+        }
+
+        [WebMethod]
+        public static List<string> busca_inv(string prefixText, int count)
+        {
+            List<String> columnData = new List<String>();
+            string d_f = prefixText.ToUpper();
+
+            using (bd_imEntities m_df = new bd_imEntities())
+            {
+                var i_df = (from i_u in m_df.inf_inv
+
+                            where i_u.caracteristica.Contains(d_f)
+
+                            select new
+                            {
+                                i_u.caracteristica,
+                                i_u.cod_inv,
+                            }).ToList();
+
+                foreach (var ff_d in i_df)
+                {
+                    columnData.Add(ff_d.caracteristica + " | " + ff_d.cod_inv);
+                }
+            }
+
+            return columnData;
+        }
+
+        [WebMethod]
         public static List<string> busca_pnl(string prefixText, int count)
         {
             List<String> columnData = new List<String>();
@@ -749,7 +817,6 @@ namespace aw_im
                 {
                     if (int_idperf <= 3)
                     {
-
                         var i_df = (from i_u in m_df.inf_usuario
                                     join i_up in m_df.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
                                     where i_up.nombres.Contains(d_f)
@@ -902,9 +969,7 @@ namespace aw_im
                         {
                             columnData.Add(ff_d.razon_social + " | " + ff_d.cod_prov);
                         }
-
                     }
-
                 }
             }
             else if (str_pnlID == "pnl_clte")
@@ -950,65 +1015,6 @@ namespace aw_im
             return columnData;
         }
 
-        [WebMethod]
-        public static List<string> busca_clte(string prefixText, int count)
-        {
-            List<String> columnData = new List<String>();
-            string d_f = prefixText.ToUpper();
-
-            using (bd_imEntities m_df = new bd_imEntities())
-            {
-                var i_df = (from i_u in m_df.inf_clte
-
-                            where i_u.nombres.Contains(d_f)
-
-                            select new
-                            {
-                                nom_comp = i_u.nombres + " " + i_u.apaterno + " " + i_u.amaterno,
-                                i_u.cod_clte,
-                            }).ToList();
-
-                foreach (var ff_d in i_df)
-                {
-                    columnData.Add(ff_d.nom_comp + " | " + ff_d.cod_clte);
-                }
-            }
-
-            return columnData;
-        }
-
-        [WebMethod]
-        public static List<string> busca_inv(string prefixText, int count)
-        {
-            List<String> columnData = new List<String>();
-            string d_f = prefixText.ToUpper();
-
-            using (bd_imEntities m_df = new bd_imEntities())
-            {
-                var i_df = (from i_u in m_df.inf_inv
-
-                            where i_u.caracteristica.Contains(d_f)
-
-                            select new
-                            {
-                                i_u.caracteristica,
-                                i_u.cod_inv,
-                            }).ToList();
-
-                foreach (var ff_d in i_df)
-                {
-                    columnData.Add(ff_d.caracteristica + " | " + ff_d.cod_inv);
-                }
-            }
-
-            return columnData;
-        }
-
-        private string RemoveSpecialCharacters(string str)
-        {
-            return Regex.Replace(str, @"[^0-9A-Za-z]", string.Empty, RegexOptions.None);
-        }
-
         public static string RemoveAccentsWithRegEx(string inputString)
         {
             Regex replace_a_Accents = new Regex("[á|à|ä|â]", RegexOptions.Compiled);
@@ -1032,229 +1038,174 @@ namespace aw_im
             upModal.Update();
         }
 
+        private string RemoveSpecialCharacters(string str)
+        {
+            return Regex.Replace(str, @"[^0-9A-Za-z]", string.Empty, RegexOptions.None);
+        }
+
         #endregion funciones
 
         #region ctrl_venta
 
-        protected void lkb_vnta_buscar_Click(object sender, EventArgs e)
+        protected void btn_vnta_Click(object sender, EventArgs e)
         {
-            gv_inv_vnta.Visible = false;
-            gv_inv_vntaf.Visible = false;
-            div_i_vnta.Visible = true;
-            div_i_vnta_binv.Visible = false;
-            div_i_vnta_busr.Visible = false;
-            div_i_vnta_nusr.Visible = false;
-            btn_vnta.Visible = false;
-            string f_busqueda = string.Empty;
-
-            if (string.IsNullOrEmpty(i_vnta_buscar.Text))
+            if (est_vnta == 0)
             {
+                Mensaje("Favor de seleccionar una acción");
             }
             else
             {
-                f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
-                if (f_busqueda == "TODO")
+                string d_vnta_clte = Request.Form["i_vnta_codclte"];
+
+                if (est_vnta == 1)
                 {
-                    f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
+                    Guid guid_vnta = Guid.NewGuid();
+                    Guid guid_vnta_clte;
+                    string cod_usrf;
 
-                    using (bd_imEntities m_usrf = new bd_imEntities())
+                    using (bd_imEntities m_usr = new bd_imEntities())
                     {
+                        var i_clte = (from i_i in m_usr.inf_clte
+                                      where i_i.cod_clte == d_vnta_clte
+                                      select i_i).FirstOrDefault();
 
-                        if (int_idperf <= 3)
+                        guid_vnta_clte = i_clte.clte_ID;
+
+                        var i_f_b = (from c in m_usr.inf_vnta
+                                     select c).ToList();
+
+                        if (i_f_b.Count == 0)
                         {
-                            var i_f_b = (from i_i in m_usrf.inf_vnta
-                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-
-                                         select new
-                                         {
-                                             i_i.vnta_ID,
-                                             i_i.cod_vnta,
-                                             i_i.est_vnta_ID,
-                                             i_i.centro_ID,
-                                             i_i.usuario_ID,
-                                             i_i.registro,
-                                         }).ToList();
-
-                            if (i_f_b.Count == 0)
-                            {
-                                gv_vntaff.DataSource = i_f_b;
-                                gv_vntaff.DataBind();
-                                gv_vntaff.Visible = true;
-
-                                Mensaje("Inventario no encontrado.");
-                            }
-                            else
-                            {
-                                gv_vntaff.DataSource = i_f_b;
-                                gv_vntaff.DataBind();
-                                gv_vntaff.Visible = true;
-                            }
+                            cod_usrf = "VNTA0001";
                         }
                         else
                         {
-                            var i_f_b = (from i_i in m_usrf.inf_vnta
-                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-                                         where i_i.centro_ID == empf_ID
-                                         select new
-                                         {
-                                             i_i.vnta_ID,
-                                             i_i.cod_vnta,
-                                             i_i.est_vnta_ID,
-                                             i_i.centro_ID,
-                                             i_i.usuario_ID,
-                                             i_i.registro,
-                                         }).ToList();
+                            cod_usrf = "VNTA" + string.Format("{0:0000}", i_f_b.Count + 1);
+                        }
 
-                            if (i_f_b.Count == 0)
-                            {
-                                gv_vntaff.DataSource = i_f_b;
-                                gv_vntaff.DataBind();
-                                gv_vntaff.Visible = true;
+                        var i_f_bf = (from c in m_usr.inf_vnta
 
-                                Mensaje("Inventario no encontrado.");
-                            }
-                            else
+                                      select c).ToList();
+                        usr_ID = Guid.Empty;
+                        empf_ID = Guid.Empty;
+                        usr_ID = (Guid)(Session["ss_idusr"]);
+                        empf_ID = (Guid)(Session["ss_idcnt"]);
+                        if (i_f_bf.Count == 0)
+                        {
+                            var d_cnt = new inf_vnta
                             {
-                                gv_vntaff.DataSource = i_f_b;
-                                gv_vntaff.DataBind();
-                                gv_vntaff.Visible = true;
+                                vnta_ID = guid_vnta,
+                                est_vnta_ID = 1,
+                                cod_vnta = cod_usrf,
+                                vnta_tipo_ID = 1,
+                                centro_ID = empf_ID,
+                                usuario_ID = usr_ID,
+                                clte_ID = guid_vnta_clte,
+                                registro = DateTime.Now
+                            };
+
+                            m_usr.inf_vnta.Add(d_cnt);
+
+                            for (int i = tbl_vnta_inv.Rows.Count - 1; i >= 0; i--)
+                            {
+                                DataRow dr = tbl_vnta_inv.Rows[i];
+                                Guid inv_dd = Guid.Parse(dr[0].ToString());
+                                decimal dd_costo = decimal.Parse(dr[6].ToString().Replace("$", ""));
+                                string f_cant = dr[7].ToString().Replace(".00", "");
+                                int dd_cantidad = int.Parse(f_cant);
+                                int dd_desc = int.Parse(dr[8].ToString().Replace("%", ""));
+
+                                var d_vnta_inv = new inf_vnta_inv
+                                {
+                                    vnta_inv_ID = Guid.NewGuid(),
+                                    inventario_ID = inv_dd,
+                                    costo = dd_costo,
+                                    cantidad = dd_cantidad,
+                                    porcentaje_desc = dd_desc,
+                                    vnta_ID = guid_vnta
+                                };
+                                m_usr.inf_vnta_inv.Add(d_vnta_inv);
                             }
+                            m_usr.SaveChanges();
+
+                            est_vnta = 0;
+                            Session["vntaf_ID"] = guid_vnta;
+                            //defual_rpt(guid_vnta);
+                            est_vnta = 0;
+                            gv_inv_vnta.Visible = false;
+                            gv_inv_vntaf.Visible = false;
+                            gv_vntaff.Visible = false;
+                            ctrl_vnta();
+                            div_i_vnta.Visible = true;
+                            div_i_vnta_busr.Visible = true;
+                            div_i_vnta_nusr.Visible = true;
+                            btn_vnta.Visible = true;
+                            tbl_vnta_inv = new DataTable("tbl_vnta_inv");
+                            Mensaje("Datos guardados con éxito");
+                            Response.Redirect("rpt_remision.aspx");
+                            Session["vntaf_ID"] = Guid.Empty;
+                        }
+                        else
+                        {
+                            var d_cnt = new inf_vnta
+                            {
+                                vnta_ID = guid_vnta,
+                                est_vnta_ID = 1,
+                                cod_vnta = cod_usrf,
+                                vnta_tipo_ID = 1,
+                                centro_ID = empf_ID,
+                                usuario_ID = usr_ID,
+                                clte_ID = guid_vnta_clte,
+                                registro = DateTime.Now
+                            };
+
+                            m_usr.inf_vnta.Add(d_cnt);
+                            for (int i = tbl_vnta_inv.Rows.Count - 1; i >= 0; i--)
+                            {
+                                DataRow dr = tbl_vnta_inv.Rows[i];
+                                Guid inv_dd = Guid.Parse(dr[0].ToString());
+                                decimal dd_costo = decimal.Parse(dr[6].ToString().Replace("$", ""));
+                                string f_cant = dr[7].ToString().Replace(".00", "");
+                                int dd_cantidad = int.Parse(f_cant);
+                                int dd_desc = int.Parse(dr[8].ToString().Replace("%", ""));
+
+                                var d_vnta_inv = new inf_vnta_inv
+                                {
+                                    vnta_inv_ID = Guid.NewGuid(),
+                                    inventario_ID = inv_dd,
+                                    costo = dd_costo,
+                                    cantidad = dd_cantidad,
+                                    porcentaje_desc = dd_desc,
+                                    vnta_ID = guid_vnta
+                                };
+                                m_usr.inf_vnta_inv.Add(d_vnta_inv);
+                            }
+                            m_usr.SaveChanges();
+                            est_vnta = 0;
+                            Session["vntaf_ID"] = guid_vnta;
+                            //defual_rpt(guid_vnta);
+                            est_vnta = 0;
+                            gv_inv_vnta.Visible = false;
+                            gv_inv_vntaf.Visible = false;
+                            gv_vntaff.Visible = false;
+                            ctrl_vnta();
+                            div_i_vnta.Visible = true;
+                            div_i_vnta_busr.Visible = true;
+                            div_i_vnta_nusr.Visible = true;
+                            btn_vnta.Visible = true;
+                            tbl_vnta_inv = new DataTable("tbl_vnta_inv");
+                            Mensaje("Datos guardados con éxito");
+                            Response.Redirect("rpt_remision.aspx");
+                            Session["vntaf_ID"] = Guid.Empty;
                         }
                     }
                 }
-            }
-        }
-
-        protected void lkb_vnta_agregar_Click(object sender, EventArgs e)
-        {
-            Session["vntaf_ID"] = Guid.Empty;
-            est_vnta = 1;
-            gv_inv_vnta.Visible = false;
-            gv_inv_vntaf.Visible = false;
-            gv_vntaff.Visible = false;
-            ctrl_vnta();
-            div_i_vnta.Visible = true;
-            div_i_vnta_busr.Visible = true;
-            div_i_vnta_nusr.Visible = true;
-            btn_vnta.Visible = true;
-            tbl_vnta_inv = new DataTable("tbl_vnta_inv");
-        }
-
-        protected void lkb_vnta_clte_Click(object sender, EventArgs e)
-        {
-        }
-
-        protected void lkb_vnta_invf_Click(object sender, EventArgs e)
-        {
-            string f_busqueda = string.Empty;
-
-            try
-            {
-                f_busqueda = Request.Form["i_vnta_inv"].ToString().ToUpper().Trim();
-                string n_fv;
-                Char char_s = '|';
-                string d_rub = f_busqueda;
-                String[] de_rub = d_rub.Trim().Split(char_s);
-
-                n_fv = de_rub[1].Trim();
-
-                using (bd_imEntities m_usrf = new bd_imEntities())
+                else
                 {
-                    var i_f_b = (from i_i in m_usrf.inf_inv
-                                 join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                 join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                 join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-                                 where i_i.cod_inv == n_fv
-                                 select new
-                                 {
-                                     i_i.inventario_ID,
-                                     i_i.cod_inv,
-                                     i_ei.est_inv_desc,
-                                     i_ge.grado_escolar_desc,
-                                     i_ne.nivel_escolar_desc,
-                                     i_i.categoria,
-                                     i_i.caracteristica,
-                                     i_i.costo,
-                                     i_i.registro,
-                                 }).ToList();
-
-                    if (i_f_b.Count == 0)
-                    {
-                        gv_inv_vnta.DataSource = i_f_b;
-                        gv_inv_vnta.DataBind();
-                        gv_inv_vnta.Visible = true;
-                        gv_inv_vnta.Visible = true;
-
-                        Mensaje("Inventario no encontrado.");
-                    }
-                    else
-                    {
-                        gv_inv_vnta.DataSource = i_f_b;
-                        gv_inv_vnta.DataBind();
-                        gv_inv_vnta.Visible = true;
-                        gv_inv_vnta.Visible = true;
-                    }
                 }
             }
-            catch
-            {
-                ctrl_inv();
-                div_i_inv.Visible = false;
-                Mensaje("Inventario no encontrado.");
-            }
-        }
 
-        protected void lkb_vnta_cltef_Click(object sender, EventArgs e)
-        {
-            string f_busqueda = string.Empty;
-            f_busqueda = Request.Form["i_vnta_clte"].ToString().ToUpper().Trim();
-            string n_fv;
-            try
-            {
-                Char char_s = '|';
-                string d_rub = f_busqueda;
-                String[] de_rub = d_rub.Trim().Split(char_s);
-
-                n_fv = de_rub[1].Trim();
-
-                using (bd_imEntities m_clte = new bd_imEntities())
-                {
-                    var i_clte = (from i_i in m_clte.inf_clte
-                                  join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
-                                  where i_i.cod_clte == n_fv
-                                  select new
-                                  {
-                                      i_i.clte_ID,
-                                      i_i.cod_clte,
-                                      i_i.nombres,
-                                      i_i.apaterno,
-                                      i_i.amaterno,
-                                      i_i.registro,
-                                  }).ToList();
-
-                    if (i_clte.Count == 0)
-                    {
-                        i_vnta_codclte.Value = string.Empty;
-                        i_vnta_nombresc.Value = string.Empty;
-                        i_vnta_apaternoc.Value = string.Empty;
-                        i_vnta_amaternoc.Value = string.Empty;
-                    }
-                    else
-                    {
-                        i_vnta_codclte.Value = i_clte[0].cod_clte;
-                        i_vnta_nombresc.Value = i_clte[0].nombres;
-                        i_vnta_apaternoc.Value = i_clte[0].apaterno;
-                        i_vnta_amaternoc.Value = i_clte[0].amaterno;
-                    }
-                }
-            }
-            catch
-            {
-            }
+            prgLoadingStatus.Visible = false;
         }
 
         protected void gv_inv_vnta_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -1318,7 +1269,7 @@ namespace aw_im
                         gv_inv_vntaf.DataBind();
                         gv_inv_vntaf.Visible = true;
 
-                        Mensaje("Inventario no encontrado.");
+                        Mensaje("Venta no encontrado.");
                     }
                     else
                     {
@@ -1354,179 +1305,6 @@ namespace aw_im
                 gv_inv_vntaf.DataSource = tbl_vnta_inv;
                 gv_inv_vntaf.DataBind();
                 gv_inv_vntaf.Visible = true;
-            }
-        }
-
-        protected void btn_vnta_Click(object sender, EventArgs e)
-        {
-            if (est_vnta == 0)
-            {
-                Mensaje("Favor de seleccionar una acción");
-            }
-            else
-            {
-                string d_vnta_clte = Request.Form["i_vnta_codclte"];
-
-                if (est_vnta == 1)
-                {
-                    Guid guid_vnta = Guid.NewGuid();
-                    Guid guid_vnta_clte;
-                    string cod_usrf;
-
-                    using (bd_imEntities m_usr = new bd_imEntities())
-                    {
-                        var i_clte = (from i_i in m_usr.inf_clte
-                                      where i_i.cod_clte == d_vnta_clte
-                                      select i_i).FirstOrDefault();
-
-                        guid_vnta_clte = i_clte.clte_ID;
-
-                        var i_f_b = (from c in m_usr.inf_vnta
-                                     select c).ToList();
-
-                        if (i_f_b.Count == 0)
-                        {
-                            cod_usrf = "VNTA0001";
-                        }
-                        else
-                        {
-                            cod_usrf = "VNTA" + string.Format("{0:0000}", i_f_b.Count + 1);
-                        }
-
-                        var i_f_bf = (from c in m_usr.inf_vnta
-
-                                      select c).ToList();
-
-                        if (i_f_bf.Count == 0)
-                        {
-                            var d_cnt = new inf_vnta
-                            {
-                                vnta_ID = guid_vnta,
-                                est_vnta_ID = 1,
-                                cod_vnta = cod_usrf,
-                                vnta_tipo_ID = 1,
-                                centro_ID = empf_ID,
-                                usuario_ID = usr_ID,
-                                clte_ID = guid_vnta_clte,
-                                registro = DateTime.Now
-                            };
-
-                            m_usr.inf_vnta.Add(d_cnt);
-
-                            for (int i = tbl_vnta_inv.Rows.Count - 1; i >= 0; i--)
-                            {
-                                DataRow dr = tbl_vnta_inv.Rows[i];
-                                Guid inv_dd = Guid.Parse(dr[0].ToString());
-                                decimal dd_costo = decimal.Parse(dr[6].ToString().Replace("$", ""));
-                                string f_cant = dr[7].ToString().Replace(".00", "");
-                                int dd_cantidad = int.Parse(f_cant);
-                                int dd_desc = int.Parse(dr[8].ToString().Replace("%", ""));
-
-                                var d_vnta_inv = new inf_vnta_inv
-                                {
-                                    vnta_inv_ID = Guid.NewGuid(),
-                                    inventario_ID = inv_dd,
-                                    costo = dd_costo,
-                                    cantidad = dd_cantidad,
-                                    porcentaje_desc = dd_desc,
-                                    vnta_ID = guid_vnta
-                                };
-                                m_usr.inf_vnta_inv.Add(d_vnta_inv);
-                            }
-                            m_usr.SaveChanges();
-
-                            gv_inv_vnta.Visible = false;
-                            gv_inv_vntaf.Visible = false;
-                            ctrl_vnta();
-
-                            Session["vntaf_ID"] = guid_vnta;
-                            Response.Redirect("rpt_remision.aspx");
-                            Mensaje("Datos guardados con éxito");
-                        }
-                        else
-                        {
-                            var d_cnt = new inf_vnta
-                            {
-                                vnta_ID = guid_vnta,
-                                est_vnta_ID = 1,
-                                cod_vnta = cod_usrf,
-                                vnta_tipo_ID = 1,
-                                centro_ID = empf_ID,
-                                usuario_ID = usr_ID,
-                                clte_ID = guid_vnta_clte,
-                                registro = DateTime.Now
-                            };
-
-                            m_usr.inf_vnta.Add(d_cnt);
-                            for (int i = tbl_vnta_inv.Rows.Count - 1; i >= 0; i--)
-                            {
-                                DataRow dr = tbl_vnta_inv.Rows[i];
-                                Guid inv_dd = Guid.Parse(dr[0].ToString());
-                                decimal dd_costo = decimal.Parse(dr[6].ToString().Replace("$", ""));
-                                string f_cant = dr[7].ToString().Replace(".00", "");
-                                int dd_cantidad = int.Parse(f_cant);
-                                int dd_desc = int.Parse(dr[8].ToString().Replace("%", ""));
-
-                                var d_vnta_inv = new inf_vnta_inv
-                                {
-                                    vnta_inv_ID = Guid.NewGuid(),
-                                    inventario_ID = inv_dd,
-                                    costo = dd_costo,
-                                    cantidad = dd_cantidad,
-                                    porcentaje_desc = dd_desc,
-                                    vnta_ID = guid_vnta
-                                };
-                                m_usr.inf_vnta_inv.Add(d_vnta_inv);
-                            }
-                            m_usr.SaveChanges();
-                            gv_inv_vnta.Visible = false;
-                            gv_inv_vntaf.Visible = false;
-                            ctrl_vnta();
-                            Session["vntaf_ID"] = guid_vnta;
-                            Response.Redirect("rpt_remision.aspx");
-                            Mensaje("Datos guardados con éxito");
-                        }
-                    }
-                }
-                else
-                {
-                }
-            }
-
-            prgLoadingStatus.Visible = false;
-        }
-
-        protected void gv_vntaff_RowDataBound(object sender, GridViewRowEventArgs e)
-        {
-            if (e.Row.RowType == DataControlRowType.DataRow)
-            {
-                Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
-                int est_id;
-
-                using (bd_imEntities m_est = new bd_imEntities())
-                {
-                    var i_est = (from md_usr in m_est.inf_vnta
-                                 where md_usr.vnta_ID == f_ID
-                                 select new
-                                 {
-                                     md_usr.est_vnta_ID,
-                                 }).FirstOrDefault();
-
-                    est_id = int.Parse(i_est.est_vnta_ID.ToString());
-
-                    DropDownList ddl_est = (e.Row.FindControl("ddl_vnta_estatus") as DropDownList);
-
-                    var tbl_sepomex = (from c in m_est.fact_est_vnta
-                                       select c).ToList();
-
-                    ddl_est.DataSource = tbl_sepomex;
-
-                    ddl_est.DataTextField = "est_vnta_desc";
-                    ddl_est.DataValueField = "est_vnta_ID";
-                    ddl_est.DataBind();
-                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
-                    ddl_est.SelectedValue = est_id.ToString();
-                }
             }
         }
 
@@ -1566,7 +1344,7 @@ namespace aw_im
                         gv_vntaff.DataBind();
                         gv_vntaff.Visible = true;
 
-                        Mensaje("Inventario no encontrado.");
+                        Mensaje("Venta no encontrado.");
                     }
                     else
                     {
@@ -1606,6 +1384,260 @@ namespace aw_im
             }
         }
 
+        protected void gv_vntaff_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
+                int est_id;
+
+                using (bd_imEntities m_est = new bd_imEntities())
+                {
+                    var i_est = (from md_usr in m_est.inf_vnta
+                                 where md_usr.vnta_ID == f_ID
+                                 select new
+                                 {
+                                     md_usr.est_vnta_ID,
+                                 }).FirstOrDefault();
+
+                    est_id = int.Parse(i_est.est_vnta_ID.ToString());
+
+                    DropDownList ddl_est = (e.Row.FindControl("ddl_vnta_estatus") as DropDownList);
+
+                    var tbl_sepomex = (from c in m_est.fact_est_vnta
+                                       select c).ToList();
+
+                    ddl_est.DataSource = tbl_sepomex;
+
+                    ddl_est.DataTextField = "est_vnta_desc";
+                    ddl_est.DataValueField = "est_vnta_ID";
+                    ddl_est.DataBind();
+                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
+                    ddl_est.SelectedValue = est_id.ToString();
+                }
+            }
+        }
+
+        protected void lkb_vnta_agregar_Click(object sender, EventArgs e)
+        {
+            Session["vntaf_ID"] = Guid.Empty;
+            est_vnta = 1;
+            gv_inv_vnta.Visible = false;
+            gv_inv_vntaf.Visible = false;
+            gv_vntaff.Visible = false;
+            ctrl_vnta();
+            div_i_vnta.Visible = true;
+            div_i_vnta_busr.Visible = true;
+            div_i_vnta_nusr.Visible = true;
+            btn_vnta.Visible = true;
+            tbl_vnta_inv = new DataTable("tbl_vnta_inv");
+        }
+
+        protected void lkb_vnta_buscar_Click(object sender, EventArgs e)
+        {
+            gv_inv_vnta.Visible = false;
+            gv_inv_vntaf.Visible = false;
+            div_i_vnta.Visible = true;
+            div_i_vnta_binv.Visible = false;
+            div_i_vnta_busr.Visible = false;
+            div_i_vnta_nusr.Visible = false;
+            btn_vnta.Visible = false;
+            string f_busqueda = string.Empty;
+
+            if (string.IsNullOrEmpty(i_vnta_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
+
+                    using (bd_imEntities m_usrf = new bd_imEntities())
+                    {
+                        if (int_idperf <= 3)
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_vnta
+                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                                         select new
+                                         {
+                                             i_i.vnta_ID,
+                                             i_i.cod_vnta,
+                                             i_i.est_vnta_ID,
+                                             i_i.centro_ID,
+                                             i_i.usuario_ID,
+                                             i_i.registro,
+                                         }).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+
+                                Mensaje("Venta no encontrado.");
+                            }
+                            else
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+                            }
+                        }
+                        else
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_vnta
+                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                         where i_i.centro_ID == empf_ID
+                                         select new
+                                         {
+                                             i_i.vnta_ID,
+                                             i_i.cod_vnta,
+                                             i_i.est_vnta_ID,
+                                             i_i.centro_ID,
+                                             i_i.usuario_ID,
+                                             i_i.registro,
+                                         }).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+
+                                Mensaje("Venta no encontrado.");
+                            }
+                            else
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        protected void lkb_vnta_clte_Click(object sender, EventArgs e)
+        {
+        }
+
+        protected void lkb_vnta_cltef_Click(object sender, EventArgs e)
+        {
+            string f_busqueda = string.Empty;
+            f_busqueda = Request.Form["i_vnta_clte"].ToString().ToUpper().Trim();
+            string n_fv;
+            try
+            {
+                Char char_s = '|';
+                string d_rub = f_busqueda;
+                String[] de_rub = d_rub.Trim().Split(char_s);
+
+                n_fv = de_rub[1].Trim();
+
+                using (bd_imEntities m_clte = new bd_imEntities())
+                {
+                    var i_clte = (from i_i in m_clte.inf_clte
+                                  join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
+                                  where i_i.cod_clte == n_fv
+                                  select new
+                                  {
+                                      i_i.clte_ID,
+                                      i_i.cod_clte,
+                                      i_i.nombres,
+                                      i_i.apaterno,
+                                      i_i.amaterno,
+                                      i_i.registro,
+                                  }).ToList();
+
+                    if (i_clte.Count == 0)
+                    {
+                        i_vnta_codclte.Value = string.Empty;
+                        i_vnta_nombresc.Value = string.Empty;
+                        i_vnta_apaternoc.Value = string.Empty;
+                        i_vnta_amaternoc.Value = string.Empty;
+                    }
+                    else
+                    {
+                        i_vnta_codclte.Value = i_clte[0].cod_clte;
+                        i_vnta_nombresc.Value = i_clte[0].nombres;
+                        i_vnta_apaternoc.Value = i_clte[0].apaterno;
+                        i_vnta_amaternoc.Value = i_clte[0].amaterno;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        protected void lkb_vnta_invf_Click(object sender, EventArgs e)
+        {
+            string f_busqueda = string.Empty;
+
+            try
+            {
+                f_busqueda = Request.Form["i_vnta_inv"].ToString().ToUpper().Trim();
+                string n_fv;
+                Char char_s = '|';
+                string d_rub = f_busqueda;
+                String[] de_rub = d_rub.Trim().Split(char_s);
+
+                n_fv = de_rub[1].Trim();
+
+                using (bd_imEntities m_usrf = new bd_imEntities())
+                {
+                    var i_f_b = (from i_i in m_usrf.inf_inv
+                                 join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                 join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                 join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                 where i_i.cod_inv == n_fv
+                                 select new
+                                 {
+                                     i_i.inventario_ID,
+                                     i_i.cod_inv,
+                                     i_ei.est_inv_desc,
+                                     i_ge.grado_escolar_desc,
+                                     i_ne.nivel_escolar_desc,
+                                     i_i.categoria,
+                                     i_i.caracteristica,
+                                     i_i.costo,
+                                     i_i.registro,
+                                 }).ToList();
+
+                    if (i_f_b.Count == 0)
+                    {
+                        gv_inv_vnta.DataSource = i_f_b;
+                        gv_inv_vnta.DataBind();
+                        gv_inv_vnta.Visible = true;
+                        gv_inv_vnta.Visible = true;
+
+                        Mensaje("Venta no encontrado.");
+                    }
+                    else
+                    {
+                        gv_inv_vnta.DataSource = i_f_b;
+                        gv_inv_vnta.DataBind();
+                        gv_inv_vnta.Visible = true;
+                        gv_inv_vnta.Visible = true;
+                    }
+                }
+            }
+            catch
+            {
+                ctrl_inv();
+                div_i_inv.Visible = false;
+                Mensaje("Venta no encontrado.");
+            }
+        }
+
         private void ctrl_vnta()
         {
             i_vnta_buscar.Text = string.Empty;
@@ -1620,6 +1652,43 @@ namespace aw_im
         #endregion ctrl_venta
 
         #region ctrl_compra
+
+        protected void btn_comp_guardar_Click(object sender, EventArgs e)
+        {
+            if (est_comp == 0)
+            {
+                Mensaje("Favor de seleccionar una acción");
+            }
+            else
+            {
+                string d_comp_cant = Request.Form["i_comp_cant"];
+                string d_comp_costo = Request.Form["i_comp_costo"];
+                string d_comp_cat = Request.Form["i_comp_cat"];
+                string d_comp_desc = Request.Form["i_comp_desc"];
+
+                TextInfo t_comp_cat = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_comp_desc = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_comp_carat = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_comp_cat = t_comp_cat.ToTitleCase(d_comp_cat.ToLower());
+                string dd_comp_desc = t_comp_desc.ToTitleCase(d_comp_desc.ToLower());
+
+                if (est_comp == 1)
+                {
+                    Mensaje("Favor de seleccionar una Acción");
+
+                    guarda_compras(d_comp_cant, d_comp_costo, dd_comp_cat, dd_comp_desc);
+                }
+                else
+                {
+                    edita_compras(comp_f, d_comp_cant, d_comp_costo, dd_comp_cat, dd_comp_desc);
+                }
+            }
+        }
+
+        protected void gv_comp_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+        }
 
         protected void gv_comp_RowCommand(object sender, GridViewCommandEventArgs e)
         {
@@ -1647,7 +1716,6 @@ namespace aw_im
                                           i_i.cod_comp,
                                           i_ei.est_comp_desc,
                                           i_i.categoria,
-                                          i_i.caracteristica,
                                           i_i.registro,
                                       }).ToList();
 
@@ -1672,7 +1740,6 @@ namespace aw_im
                         i_comp_costo.Value = Math.Round(Convert.ToDecimal(i_comp[0].costo.ToString()), 0).ToString();
                         i_comp_cat.Value = i_comp[0].categoria.ToString();
                         i_comp_desc.Value = i_comp[0].comp_desc.ToString();
-                        i_comp_caract.Value = i_comp[0].caracteristica.ToString();
                     }
                 }
                 catch
@@ -1714,155 +1781,6 @@ namespace aw_im
             }
         }
 
-        protected void gv_comp_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
-        }
-
-        protected void btn_comp_guardar_Click(object sender, EventArgs e)
-        {
-            if (est_comp == 0)
-            {
-                Mensaje("Favor de seleccionar una acción");
-            }
-            else
-            {
-                string d_comp_cant = Request.Form["i_comp_cant"];
-                string d_comp_costo = Request.Form["i_comp_costo"];
-                string d_comp_cat = Request.Form["i_comp_cat"];
-                string d_comp_desc = Request.Form["i_comp_desc"];
-                string d_comp_carat = Request.Form["i_comp_caract"];
-
-                TextInfo t_comp_cat = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_comp_desc = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_comp_carat = new CultureInfo("es-MX", false).TextInfo;
-
-                string dd_comp_cat = t_comp_cat.ToTitleCase(d_comp_cat.ToLower());
-                string dd_comp_desc = t_comp_desc.ToTitleCase(d_comp_desc.ToLower());
-                string dd_comp_carat = t_comp_carat.ToTitleCase(d_comp_carat.ToLower());
-
-                if (est_comp == 1)
-                {
-                    Mensaje("Favor de seleccionar una Acción");
-
-                    guarda_compras(d_comp_cant, d_comp_costo, d_comp_cat, d_comp_desc, d_comp_carat);
-                }
-                else
-                {
-                    edita_compras(comp_f, d_comp_cant, d_comp_costo, d_comp_cat, d_comp_desc, d_comp_carat);
-                }
-            }
-        }
-
-        private void edita_compras(Guid comp_f, string d_comp_cant, string d_comp_costo, string d_comp_cat, string d_comp_desc, string d_comp_carat)
-        {
-            int int_ddl = 0;
-            decimal dd_comp_costo = Decimal.Parse(d_comp_costo);
-            int dd_comp_cant = int.Parse(d_comp_cant);
-
-            foreach (GridViewRow row in gv_comp.Rows)
-            {
-                if (row.RowType == DataControlRowType.DataRow)
-                {
-                    DropDownList dl = (DropDownList)row.FindControl("ddl_comp_estatus");
-
-                    int_ddl = int.Parse(dl.SelectedValue);
-                }
-            }
-
-            using (var m_inv = new bd_imEntities())
-            {
-                var i_inv = (from c in m_inv.inf_comp
-                             where c.compra_ID == comp_f
-                             select c).FirstOrDefault();
-
-                i_inv.est_comp_ID = int_ddl;
-                i_inv.cantidad = dd_comp_cant;
-                i_inv.categoria = d_comp_cat;
-                i_inv.comp_desc = d_comp_desc;
-                i_inv.caracteristica = d_comp_carat;
-                i_inv.costo = dd_comp_costo;
-
-                m_inv.SaveChanges();
-            }
-            ctrl_comp();
-            div_i_comp.Visible = false;
-            Mensaje("Datos actualizados con éxito");
-        }
-
-        private void guarda_compras(string d_comp_cant, string d_comp_costo, string d_comp_cat, string d_comp_desc, string d_comp_carat)
-        {
-            Guid guid_inv = Guid.NewGuid();
-            string cod_usrf;
-
-            using (bd_imEntities m_usr = new bd_imEntities())
-            {
-                var i_f_b = (from c in m_usr.inf_comp
-                             select c).ToList();
-
-                if (i_f_b.Count == 0)
-                {
-                    cod_usrf = "COMP0001";
-                }
-                else
-                {
-                    cod_usrf = "COMP" + string.Format("{0:0000}", i_f_b.Count + 1);
-                }
-
-                var i_f_bf = (from c in m_usr.inf_comp
-                              where c.categoria == d_comp_cat
-                              where c.comp_desc == d_comp_desc
-                              where c.caracteristica == d_comp_carat
-                              select c).ToList();
-
-                if (i_f_bf.Count == 0)
-                {
-                    var d_cnt = new inf_comp
-                    {
-                        compra_ID = guid_inv,
-                        est_comp_ID = 1,
-                        cod_comp = cod_usrf,
-                        cantidad = int.Parse(d_comp_cant),
-                        comp_desc = d_comp_desc,
-                        categoria = d_comp_cat,
-                        caracteristica = d_comp_carat,
-                        costo = int.Parse(d_comp_costo),
-                        centro_ID = empf_ID,
-                        registro = DateTime.Now
-                    };
-
-                    m_usr.inf_comp.Add(d_cnt);
-                    m_usr.SaveChanges();
-
-                    ctrl_comp();
-                    div_i_comp.Visible = false;
-                    Mensaje("Datos guardados con éxito");
-                }
-                else
-                {
-                    var d_cnt = new inf_comp
-                    {
-                        compra_ID = guid_inv,
-                        est_comp_ID = 1,
-                        cod_comp = cod_usrf,
-                        cantidad = int.Parse(d_comp_cant),
-                        comp_desc = d_comp_desc,
-                        categoria = d_comp_cat,
-                        caracteristica = d_comp_carat,
-                        costo = int.Parse(d_comp_costo),
-                        centro_ID = empf_ID,
-                        registro = DateTime.Now
-                    };
-
-                    m_usr.inf_comp.Add(d_cnt);
-                    m_usr.SaveChanges();
-
-                    ctrl_comp();
-                    div_i_comp.Visible = false;
-                    Mensaje("Datos guardados con éxito");
-                }
-            }
-        }
-
         protected void lkb_comp_agregar_Click(object sender, EventArgs e)
         {
             ctrl_comp();
@@ -1899,7 +1817,7 @@ namespace aw_im
                                               i_i.cod_comp,
                                               i_ei.est_comp_desc,
                                               i_i.categoria,
-                                              i_i.caracteristica,
+                                              i_i.comp_desc,
                                               i_i.registro,
                                           }).ToList();
 
@@ -1931,7 +1849,7 @@ namespace aw_im
                                               i_i.cod_comp,
                                               i_ei.est_comp_desc,
                                               i_i.categoria,
-                                              i_i.caracteristica,
+                                              i_i.comp_desc,
                                               i_i.registro,
                                           }).ToList();
 
@@ -1980,7 +1898,7 @@ namespace aw_im
                                                   i_i.cod_comp,
                                                   i_ei.est_comp_desc,
                                                   i_i.categoria,
-                                                  i_i.caracteristica,
+                                                  i_i.comp_desc,
                                                   i_i.registro,
                                               }).ToList();
 
@@ -2013,7 +1931,7 @@ namespace aw_im
                                                   i_i.cod_comp,
                                                   i_ei.est_comp_desc,
                                                   i_i.categoria,
-                                                  i_i.caracteristica,
+                                                  i_i.comp_desc,
                                                   i_i.registro,
                                               }).ToList();
 
@@ -2052,184 +1970,161 @@ namespace aw_im
             i_comp_costo.Value = string.Empty;
             i_comp_cat.Value = string.Empty;
             i_comp_desc.Value = string.Empty;
-            i_comp_caract.Value = string.Empty;
+        }
+
+        private void edita_compras(Guid comp_f, string d_comp_cant, string d_comp_costo, string d_comp_cat, string d_comp_desc)
+        {
+            int int_ddl = 0;
+            decimal dd_comp_costo = Decimal.Parse(d_comp_costo);
+            int dd_comp_cant = int.Parse(d_comp_cant);
+
+            foreach (GridViewRow row in gv_comp.Rows)
+            {
+                if (row.RowType == DataControlRowType.DataRow)
+                {
+                    DropDownList dl = (DropDownList)row.FindControl("ddl_comp_estatus");
+
+                    int_ddl = int.Parse(dl.SelectedValue);
+                }
+            }
+
+            using (var m_inv = new bd_imEntities())
+            {
+                var i_inv = (from c in m_inv.inf_comp
+                             where c.compra_ID == comp_f
+                             select c).FirstOrDefault();
+
+                i_inv.est_comp_ID = int_ddl;
+                i_inv.cantidad = dd_comp_cant;
+                i_inv.categoria = d_comp_cat;
+                i_inv.comp_desc = d_comp_desc;
+
+                i_inv.costo = dd_comp_costo;
+
+                m_inv.SaveChanges();
+            }
+            ctrl_comp();
+            div_i_comp.Visible = false;
+            Mensaje("Datos actualizados con éxito");
+        }
+
+        private void guarda_compras(string d_comp_cant, string d_comp_costo, string d_comp_cat, string d_comp_desc)
+        {
+            Guid guid_inv = Guid.NewGuid();
+            string cod_usrf;
+
+            using (bd_imEntities m_usr = new bd_imEntities())
+            {
+                var i_f_b = (from c in m_usr.inf_comp
+                             select c).ToList();
+
+                if (i_f_b.Count == 0)
+                {
+                    cod_usrf = "COMP0001";
+                }
+                else
+                {
+                    cod_usrf = "COMP" + string.Format("{0:0000}", i_f_b.Count + 1);
+                }
+
+                var i_f_bf = (from c in m_usr.inf_comp
+                              where c.categoria == d_comp_cat
+                              where c.comp_desc == d_comp_desc
+
+                              select c).ToList();
+
+                if (i_f_bf.Count == 0)
+                {
+                    var d_cnt = new inf_comp
+                    {
+                        compra_ID = guid_inv,
+                        est_comp_ID = 1,
+                        cod_comp = cod_usrf,
+                        cantidad = int.Parse(d_comp_cant),
+                        comp_desc = d_comp_desc,
+                        categoria = d_comp_cat,
+
+                        costo = int.Parse(d_comp_costo),
+                        centro_ID = empf_ID,
+                        registro = DateTime.Now
+                    };
+
+                    m_usr.inf_comp.Add(d_cnt);
+                    m_usr.SaveChanges();
+
+                    ctrl_comp();
+                    div_i_comp.Visible = false;
+                    Mensaje("Datos guardados con éxito");
+                }
+                else
+                {
+                    var d_cnt = new inf_comp
+                    {
+                        compra_ID = guid_inv,
+                        est_comp_ID = 1,
+                        cod_comp = cod_usrf,
+                        cantidad = int.Parse(d_comp_cant),
+                        comp_desc = d_comp_desc,
+                        categoria = d_comp_cat,
+
+                        costo = int.Parse(d_comp_costo),
+                        centro_ID = empf_ID,
+                        registro = DateTime.Now
+                    };
+
+                    m_usr.inf_comp.Add(d_cnt);
+                    m_usr.SaveChanges();
+
+                    ctrl_comp();
+                    div_i_comp.Visible = false;
+                    Mensaje("Datos guardados con éxito");
+                }
+            }
         }
 
         #endregion ctrl_compra
 
         #region ctrl_inventario
 
-        private void ctrl_inv()
+        protected void btn_inv_guardar_Click(object sender, EventArgs e)
         {
-            i_inv_costo.Value = string.Empty;
-            i_inv_cat.Value = string.Empty;
-            i_inv_desc.Value = string.Empty;
-            i_inv_caract.Value = string.Empty;
-
-            i_inv_nivesc.Items.Clear();
-            i_inv_gradesc.Items.Clear();
-
-            using (bd_imEntities m_ss = new bd_imEntities())
+            if (est_inv == 0)
             {
-                var i_ma = (from c in m_ss.fact_nivel_escolar
-                            select c).OrderBy(x => x.nivel_escolar_ID).ToList();
-
-                i_inv_nivesc.DataSource = i_ma;
-                i_inv_nivesc.DataTextField = "nivel_escolar_desc";
-                i_inv_nivesc.DataValueField = "nivel_escolar_ID";
-                i_inv_nivesc.DataBind();
-
-                i_inv_nivesc.Items.Insert(0, new ListItem("*Nivel", string.Empty));
-
-                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
-            }
-        }
-
-        protected void i_inv_nivesc_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            int int_nivesc = int.Parse(i_inv_nivesc.SelectedValue);
-
-            i_inv_gradesc.Items.Clear();
-
-            using (bd_imEntities m_ss = new bd_imEntities())
-            {
-                var i_ma = (from c in m_ss.fact_grado_escolar
-                            where c.nivel_escolar_ID == int_nivesc
-                            select c).ToList();
-
-                i_inv_gradesc.DataSource = i_ma;
-                i_inv_gradesc.DataTextField = "grado_escolar_desc";
-                i_inv_gradesc.DataValueField = "grado_escolar_ID";
-                i_inv_gradesc.DataBind();
-
-                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
-            }
-        }
-
-        protected void lkb_inv_buscar_Click(object sender, EventArgs e)
-        {
-            div_i_inv.Visible = false;
-            string f_busqueda = string.Empty;
-            int f_usrp = 0;
-
-            if (string.IsNullOrEmpty(i_inv_buscar.Text))
-            {
+                Mensaje("Favor de seleccionar una Acción");
             }
             else
             {
-                f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
-                if (f_busqueda == "TODO")
+                int d_nivesc = int.Parse(Request.Form["i_inv_nivesc"]);
+                int d_gradesc = int.Parse(Request.Form["i_inv_gradesc"]);
+
+                string d_inv_costo = Request.Form["i_inv_costo"];
+                string d_inv_cat = Request.Form["i_inv_cat"];
+                string d_inv_desc = Request.Form["i_inv_desc"];
+                string d_inv_carat = Request.Form["i_inv_caract"];
+
+                TextInfo t_inv_cat = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_inv_desc = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_inv_carat = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_inv_cat = t_inv_cat.ToTitleCase(d_inv_cat.ToLower());
+                string dd_inv_desc = t_inv_desc.ToTitleCase(d_inv_desc.ToLower());
+                string dd_inv_carat = t_inv_carat.ToTitleCase(d_inv_carat.ToLower());
+
+                if (est_inv == 1)
                 {
-                    f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+                    Mensaje("Favor de seleccionar una Acción");
 
-                    if (int_idperf == 3)
-                    {
-                        f_usrp = 2;
-                    }
-
-                    using (bd_imEntities md_fb = new bd_imEntities())
-                    {
-                        var i_f_b = (from i_i in md_fb.inf_inv
-                                     join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                     join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                     join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-
-                                     select new
-                                     {
-                                         i_i.inventario_ID,
-                                         i_i.cod_inv,
-                                         i_ei.est_inv_desc,
-                                         i_ge.grado_escolar_desc,
-                                         i_ne.nivel_escolar_desc,
-                                         i_i.categoria,
-                                         i_i.caracteristica,
-                                         i_i.registro,
-                                     }).ToList();
-
-                        if (i_f_b.Count == 0)
-                        {
-                            gv_inv.DataSource = i_f_b;
-                            gv_inv.DataBind();
-                            gv_inv.Visible = true;
-                            gv_inv.Visible = true;
-
-                            Mensaje("Inventario no encontrado.");
-                        }
-                        else
-                        {
-                            gv_inv.DataSource = i_f_b;
-                            gv_inv.DataBind();
-                            gv_inv.Visible = true;
-                            gv_inv.Visible = true;
-                        }
-                    }
+                    guarda_inventario(d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
                 }
                 else
                 {
-                    try
-                    {
-                        f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
-                        string n_fv;
-                        Char char_s = '|';
-                        string d_rub = f_busqueda;
-                        String[] de_rub = d_rub.Trim().Split(char_s);
-
-                        n_fv = de_rub[1].Trim();
-
-                        using (bd_imEntities m_usrf = new bd_imEntities())
-                        {
-                            var i_f_b = (from i_i in m_usrf.inf_inv
-                                         join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                         join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                         join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-                                         where i_i.caracteristica == n_fv
-                                         select new
-                                         {
-                                             i_i.inventario_ID,
-                                             i_i.cod_inv,
-                                             i_ei.est_inv_desc,
-                                             i_ge.grado_escolar_desc,
-                                             i_ne.nivel_escolar_desc,
-                                             i_i.categoria,
-                                             i_i.caracteristica,
-                                             i_i.registro,
-                                         }).ToList();
-
-                            if (i_f_b.Count == 0)
-                            {
-                                gv_inv.DataSource = i_f_b;
-                                gv_inv.DataBind();
-                                gv_inv.Visible = true;
-                                gv_inv.Visible = true;
-
-                                Mensaje("Inventario no encontrado.");
-                            }
-                            else
-                            {
-                                gv_inv.DataSource = i_f_b;
-                                gv_inv.DataBind();
-                                gv_inv.Visible = true;
-                                gv_inv.Visible = true;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        ctrl_inv();
-                        div_i_inv.Visible = false;
-                        Mensaje("Inventario no encontrado.");
-                    }
+                    edita_inventario(inv_f, d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
                 }
             }
         }
 
-        protected void lkb_inv_agregar_Click(object sender, EventArgs e)
+        protected void gv_inv_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
-            ctrl_inv();
-            est_inv = 1;
-            gv_inv.Visible = false;
-            div_i_inv.Visible = true;
-            i_cnt_buscar.Text = string.Empty;
         }
 
         protected void gv_inv_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -2361,44 +2256,176 @@ namespace aw_im
             }
         }
 
-        protected void gv_inv_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        protected void i_inv_nivesc_SelectedIndexChanged(object sender, EventArgs e)
         {
+            int int_nivesc = int.Parse(i_inv_nivesc.SelectedValue);
+
+            i_inv_gradesc.Items.Clear();
+
+            using (bd_imEntities m_ss = new bd_imEntities())
+            {
+                var i_ma = (from c in m_ss.fact_grado_escolar
+                            where c.nivel_escolar_ID == int_nivesc
+                            select c).ToList();
+
+                i_inv_gradesc.DataSource = i_ma;
+                i_inv_gradesc.DataTextField = "grado_escolar_desc";
+                i_inv_gradesc.DataValueField = "grado_escolar_ID";
+                i_inv_gradesc.DataBind();
+
+                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
+            }
         }
 
-        protected void btn_inv_guardar_Click(object sender, EventArgs e)
+        protected void lkb_inv_agregar_Click(object sender, EventArgs e)
         {
-            if (est_inv == 0)
+            ctrl_inv();
+            est_inv = 1;
+            gv_inv.Visible = false;
+            div_i_inv.Visible = true;
+            i_cnt_buscar.Text = string.Empty;
+        }
+
+        protected void lkb_inv_buscar_Click(object sender, EventArgs e)
+        {
+            div_i_inv.Visible = false;
+            string f_busqueda = string.Empty;
+            int f_usrp = 0;
+
+            if (string.IsNullOrEmpty(i_inv_buscar.Text))
             {
-                Mensaje("Favor de seleccionar una Acción");
             }
             else
             {
-                int d_nivesc = int.Parse(Request.Form["i_inv_nivesc"]);
-                int d_gradesc = int.Parse(Request.Form["i_inv_gradesc"]);
-
-                string d_inv_costo = Request.Form["i_inv_costo"];
-                string d_inv_cat = Request.Form["i_inv_cat"];
-                string d_inv_desc = Request.Form["i_inv_desc"];
-                string d_inv_carat = Request.Form["i_inv_caract"];
-
-                TextInfo t_inv_cat = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_inv_desc = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_inv_carat = new CultureInfo("es-MX", false).TextInfo;
-
-                string dd_inv_cat = t_inv_cat.ToTitleCase(d_inv_cat.ToLower());
-                string dd_inv_desc = t_inv_desc.ToTitleCase(d_inv_desc.ToLower());
-                string dd_inv_carat = t_inv_carat.ToTitleCase(d_inv_carat.ToLower());
-
-                if (est_inv == 1)
+                f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
                 {
-                    Mensaje("Favor de seleccionar una Acción");
+                    f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
 
-                    guarda_inventario(d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
+                    {
+                        if (int_idperf == 3)
+                            f_usrp = 2;
+                    }
+
+                    using (bd_imEntities md_fb = new bd_imEntities())
+                    {
+                        var i_f_b = (from i_i in md_fb.inf_inv
+                                     join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                     join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                     join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                                     select new
+                                     {
+                                         i_i.inventario_ID,
+                                         i_i.cod_inv,
+                                         i_ei.est_inv_desc,
+                                         i_ge.grado_escolar_desc,
+                                         i_ne.nivel_escolar_desc,
+                                         i_i.categoria,
+                                         i_i.caracteristica,
+                                         i_i.registro,
+                                     }).ToList();
+
+                        if (i_f_b.Count == 0)
+                        {
+                            gv_inv.DataSource = i_f_b;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+
+                            Mensaje("Inventario no encontrado.");
+                        }
+                        else
+                        {
+                            gv_inv.DataSource = i_f_b;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+                        }
+                    }
                 }
                 else
                 {
-                    edita_inventario(inv_f, d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
+                    try
+                    {
+                        f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+                        string n_fv;
+                        Char char_s = '|';
+                        string d_rub = f_busqueda;
+                        String[] de_rub = d_rub.Trim().Split(char_s);
+
+                        n_fv = de_rub[1].Trim();
+
+                        using (bd_imEntities m_usrf = new bd_imEntities())
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_inv
+                                         join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                         join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                         join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                         where i_i.caracteristica == n_fv
+                                         select new
+                                         {
+                                             i_i.inventario_ID,
+                                             i_i.cod_inv,
+                                             i_ei.est_inv_desc,
+                                             i_ge.grado_escolar_desc,
+                                             i_ne.nivel_escolar_desc,
+                                             i_i.categoria,
+                                             i_i.caracteristica,
+                                             i_i.registro,
+                                         }).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_inv.DataSource = i_f_b;
+                                gv_inv.DataBind();
+                                gv_inv.Visible = true;
+                                gv_inv.Visible = true;
+
+                                Mensaje("Inventario no encontrado.");
+                            }
+                            else
+                            {
+                                gv_inv.DataSource = i_f_b;
+                                gv_inv.DataBind();
+                                gv_inv.Visible = true;
+                                gv_inv.Visible = true;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        ctrl_inv();
+                        div_i_inv.Visible = false;
+                        Mensaje("Inventario no encontrado.");
+                    }
                 }
+            }
+        }
+
+        private void ctrl_inv()
+        {
+            i_inv_costo.Value = string.Empty;
+            i_inv_cat.Value = string.Empty;
+            i_inv_desc.Value = string.Empty;
+            i_inv_caract.Value = string.Empty;
+
+            i_inv_nivesc.Items.Clear();
+            i_inv_gradesc.Items.Clear();
+
+            using (bd_imEntities m_ss = new bd_imEntities())
+            {
+                var i_ma = (from c in m_ss.fact_nivel_escolar
+                            select c).OrderBy(x => x.nivel_escolar_ID).ToList();
+
+                i_inv_nivesc.DataSource = i_ma;
+                i_inv_nivesc.DataTextField = "nivel_escolar_desc";
+                i_inv_nivesc.DataValueField = "nivel_escolar_ID";
+                i_inv_nivesc.DataBind();
+
+                i_inv_nivesc.Items.Insert(0, new ListItem("*Nivel", string.Empty));
+
+                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
             }
         }
 
@@ -2523,6 +2550,123 @@ namespace aw_im
         #endregion ctrl_inventario
 
         #region ctrl_cliente
+
+        protected void btn_clte_Click(object sender, EventArgs e)
+        {
+            if (est_clte == 0)
+            {
+                Mensaje("Favor de seleccionar una acción.");
+            }
+            else
+            {
+                string i_nombres_c = Request.Form["i_clte_nombresc"];
+                string i_aparterno_c = Request.Form["i_clte_apaternoc"];
+                string i_amaterno_c = Request.Form["i_clte_amaternoc"];
+                string i_emailc = Request.Form["i_clte_emailc"];
+                string i_telc = Request.Form["i_clte_telc"];
+
+                int i_tcc = int.Parse(Request.Form["i_clte_tcont"]);
+
+                string i_nombres = Request.Form["i_clte_nombres"];
+                string i_aparterno = Request.Form["i_clte_apaterno"];
+                string i_amaterno = Request.Form["i_clte_amaterno"];
+                string i_email = Request.Form["i_clte_email"];
+                string i_tel = Request.Form["i_clte_tel"];
+                string i_callenum = Request.Form["i_clte_callenum"];
+                string i_cp = Request.Form["i_clte_cp"];
+                string i_colonia = Request.Form["i_clte_scolonia"];
+
+                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_nombresc = t_nombres.ToTitleCase(i_nombres_c.ToLower());
+                string dd_apaternoc = t_apateno.ToTitleCase(i_aparterno_c.ToLower());
+                string dd_amaternoc = t_amateno.ToTitleCase(i_amaterno_c.ToLower());
+                string dd_nombres = t_nombres.ToTitleCase(i_nombres.ToLower());
+                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno.ToLower());
+                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno.ToLower());
+                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
+
+                string cod_usr = string.Empty, i_nombres_o = string.Empty, i_aparterno_o = string.Empty, i_amaterno_o = string.Empty;
+
+                try
+                {
+                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres.Trim().ToLower()));
+                    string[] separados;
+
+                    separados = i_nombres_o.Split(" ".ToCharArray());
+
+                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno.Trim().ToLower()));
+                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno.Trim().ToLower()));
+
+                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
+                }
+                catch
+                {
+                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
+                }
+
+                if (est_clte == 1)
+                {
+                    guarda_clte(dd_nombresc, dd_apaternoc, dd_amaternoc, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc, cod_usr);
+                }
+                else
+                {
+                    edita_clte(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc);
+                }
+            }
+        }
+
+        protected void btn_i_clte_cp_Click(object sender, EventArgs e)
+        {
+            string str_cp = i_clte_cp.Value;
+
+            using (bd_imEntities db_sepomex = new bd_imEntities())
+            {
+                var tbl_sepomex = (from c in db_sepomex.inf_sepomex
+                                   where c.d_codigo == str_cp
+                                   select c).ToList();
+
+                i_clte_scolonia.DataSource = tbl_sepomex;
+                i_clte_scolonia.DataTextField = "d_asenta";
+                i_clte_scolonia.DataValueField = "id_asenta_cpcons";
+                i_clte_scolonia.DataBind();
+
+                if (tbl_sepomex.Count == 1)
+                {
+                    i_clte_municipio.Value = tbl_sepomex[0].d_mnpio;
+                    i_clte_estado.Value = tbl_sepomex[0].d_estado;
+                    i_clte_scolonia.Attributes.Add("required", "required");
+                    i_clte_callenum.Attributes.Add("required", "required");
+                }
+                if (tbl_sepomex.Count > 1)
+                {
+                    i_clte_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
+
+                    i_clte_municipio.Value = tbl_sepomex[0].d_mnpio;
+                    i_clte_estado.Value = tbl_sepomex[0].d_estado;
+                    i_clte_scolonia.Attributes.Add("required", "required");
+                    i_clte_callenum.Attributes.Add("required", "required");
+                }
+                else if (tbl_sepomex.Count == 0)
+                {
+                    i_clte_scolonia.Items.Clear();
+                    i_clte_scolonia.Items.Insert(0, new ListItem("Colonia", "0"));
+                    i_clte_municipio.Value = null;
+                    i_clte_estado.Value = null;
+                    i_clte_callenum.Attributes.Add("required", string.Empty);
+                    i_clte_scolonia.Attributes.Add("required", string.Empty);
+                }
+            }
+
+            i_clte_scolonia.Focus();
+        }
+
+        protected void gv_clte_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+        }
 
         protected void gv_clte_RowCommand(object sender, GridViewCommandEventArgs e)
         {
@@ -2663,10 +2807,6 @@ namespace aw_im
                     ddl_est.SelectedValue = est_id.ToString();
                 }
             }
-        }
-
-        protected void gv_clte_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
         }
 
         protected void lkb_clte_agregar_Click(object sender, EventArgs e)
@@ -2878,119 +3018,6 @@ namespace aw_im
             }
         }
 
-        protected void btn_i_clte_cp_Click(object sender, EventArgs e)
-        {
-            string str_cp = i_clte_cp.Value;
-
-            using (bd_imEntities db_sepomex = new bd_imEntities())
-            {
-                var tbl_sepomex = (from c in db_sepomex.inf_sepomex
-                                   where c.d_codigo == str_cp
-                                   select c).ToList();
-
-                i_clte_scolonia.DataSource = tbl_sepomex;
-                i_clte_scolonia.DataTextField = "d_asenta";
-                i_clte_scolonia.DataValueField = "id_asenta_cpcons";
-                i_clte_scolonia.DataBind();
-
-                if (tbl_sepomex.Count == 1)
-                {
-                    i_clte_municipio.Value = tbl_sepomex[0].d_mnpio;
-                    i_clte_estado.Value = tbl_sepomex[0].d_estado;
-                    i_clte_scolonia.Attributes.Add("required", "required");
-                    i_clte_callenum.Attributes.Add("required", "required");
-                }
-                if (tbl_sepomex.Count > 1)
-                {
-                    i_clte_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
-
-                    i_clte_municipio.Value = tbl_sepomex[0].d_mnpio;
-                    i_clte_estado.Value = tbl_sepomex[0].d_estado;
-                    i_clte_scolonia.Attributes.Add("required", "required");
-                    i_clte_callenum.Attributes.Add("required", "required");
-                }
-                else if (tbl_sepomex.Count == 0)
-                {
-                    i_clte_scolonia.Items.Clear();
-                    i_clte_scolonia.Items.Insert(0, new ListItem("Colonia", "0"));
-                    i_clte_municipio.Value = null;
-                    i_clte_estado.Value = null;
-                    i_clte_scolonia.Attributes.Add("required", string.Empty);
-                    i_clte_callenum.Attributes.Add("required", string.Empty);
-                }
-            }
-
-            i_clte_scolonia.Focus();
-        }
-
-        protected void btn_clte_Click(object sender, EventArgs e)
-        {
-            if (est_clte == 0)
-            {
-                Mensaje("Favor de seleccionar una acción.");
-            }
-            else
-            {
-                string i_nombres_c = Request.Form["i_clte_nombresc"];
-                string i_aparterno_c = Request.Form["i_clte_apaternoc"];
-                string i_amaterno_c = Request.Form["i_clte_amaternoc"];
-                string i_emailc = Request.Form["i_clte_emailc"];
-                string i_telc = Request.Form["i_clte_telc"];
-
-                int i_tcc = int.Parse(Request.Form["i_clte_tcont"]);
-
-                string i_nombres = Request.Form["i_clte_nombres"];
-                string i_aparterno = Request.Form["i_clte_apaterno"];
-                string i_amaterno = Request.Form["i_clte_amaterno"];
-                string i_email = Request.Form["i_clte_email"];
-                string i_tel = Request.Form["i_clte_tel"];
-                string i_callenum = Request.Form["i_clte_callenum"];
-                string i_cp = Request.Form["i_clte_cp"];
-                string i_colonia = Request.Form["i_clte_scolonia"];
-
-                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
-
-                string dd_nombresc = t_nombres.ToTitleCase(i_nombres_c.ToLower());
-                string dd_apaternoc = t_apateno.ToTitleCase(i_aparterno_c.ToLower());
-                string dd_amaternoc = t_amateno.ToTitleCase(i_amaterno_c.ToLower());
-                string dd_nombres = t_nombres.ToTitleCase(i_nombres.ToLower());
-                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno.ToLower());
-                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno.ToLower());
-                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
-
-                string cod_usr = string.Empty, i_nombres_o = string.Empty, i_aparterno_o = string.Empty, i_amaterno_o = string.Empty;
-
-                try
-                {
-                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres.Trim().ToLower()));
-                    string[] separados;
-
-                    separados = i_nombres_o.Split(" ".ToCharArray());
-
-                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno.Trim().ToLower()));
-                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno.Trim().ToLower()));
-
-                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
-                }
-                catch
-                {
-                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
-                }
-
-                if (est_clte == 1)
-                {
-                    guarda_clte(dd_nombresc, dd_apaternoc, dd_amaternoc, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc, cod_usr);
-                }
-                else
-                {
-                    edita_clte(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc);
-                }
-            }
-        }
-
         private void edita_clte(string dd_nombresc, string dd_apaternoc, string dd_amaternoc, string i_emailc, string i_telc, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, int i_tcc)
         {
             int int_ddl = 0;
@@ -3172,6 +3199,113 @@ namespace aw_im
 
         #region ctrl_proveedore
 
+        protected void btn_i_prov_cp_Click(object sender, EventArgs e)
+        {
+            string str_cp = i_prov_cp.Value;
+
+            using (bd_imEntities db_sepomex = new bd_imEntities())
+            {
+                var tbl_sepomex = (from c in db_sepomex.inf_sepomex
+                                   where c.d_codigo == str_cp
+                                   select c).ToList();
+
+                i_prov_scolonia.DataSource = tbl_sepomex;
+                i_prov_scolonia.DataTextField = "d_asenta";
+                i_prov_scolonia.DataValueField = "id_asenta_cpcons";
+                i_prov_scolonia.DataBind();
+
+                if (tbl_sepomex.Count == 1)
+                {
+                    i_prov_municipio.Value = tbl_sepomex[0].d_mnpio;
+                    i_prov_estado.Value = tbl_sepomex[0].d_estado;
+                    i_prov_scolonia.Attributes.Add("required", "required");
+                    i_prov_callenum.Attributes.Add("required", "required");
+                }
+                if (tbl_sepomex.Count > 1)
+                {
+                    i_prov_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
+
+                    i_prov_municipio.Value = tbl_sepomex[0].d_mnpio;
+                    i_prov_estado.Value = tbl_sepomex[0].d_estado;
+                    i_prov_scolonia.Attributes.Add("required", "required");
+                    i_prov_callenum.Attributes.Add("required", "required");
+                }
+                else if (tbl_sepomex.Count == 0)
+                {
+                    i_prov_scolonia.Items.Clear();
+                    i_prov_scolonia.Items.Insert(0, new ListItem("Colonia", "0"));
+                    i_prov_municipio.Value = null;
+                    i_prov_estado.Value = null;
+                    i_prov_scolonia.Attributes.Add("required", string.Empty);
+                    i_prov_callenum.Attributes.Add("required", string.Empty);
+                }
+            }
+
+            i_prov_scolonia.Focus();
+        }
+
+        protected void btn_prov_Click(object sender, EventArgs e)
+        {
+            if (est_prov == 0)
+            {
+                Mensaje("Favor de seleccionar una acción.");
+            }
+            else
+            {
+                int i_trfc;
+                if (i_prov_trfc.Value == string.Empty)
+                {
+                    i_trfc = 0;
+                }
+                else
+                {
+                    i_trfc = int.Parse(Request.Form["i_prov_trfc"]);
+                }
+
+                string i_nombres_o = Request.Form["i_prov_nombres"];
+                string i_aparterno_o = Request.Form["i_prov_apaterno"];
+                string i_amaterno_o = Request.Form["i_prov_amaterno"];
+
+                string i_prov_rfc = Request.Form["i_prov_rfc"];
+                string i_prov_nom = Request.Form["i_prov_nom"];
+                string i_dpto = Request.Form["i_prov_dpto"];
+                string i_emailc = Request.Form["i_prov_emailc"];
+                string i_telc = Request.Form["i_prov_telc"];
+                string i_email = Request.Form["i_prov_email"];
+                string i_tel = Request.Form["i_prov_tel"];
+                string i_callenum = Request.Form["i_prov_callenum"];
+                string i_cp = Request.Form["i_prov_cp"];
+                string i_colonia = Request.Form["i_prov_scolonia"];
+
+                TextInfo t_prov_nom = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_dpto = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_prov_nom = t_prov_nom.ToTitleCase(i_prov_nom.ToLower());
+                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
+                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
+                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
+                string dd_dpto = t_dpto.ToTitleCase(i_dpto.ToLower());
+                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
+
+                if (est_prov == 1)
+                {
+                    guarda_proveedor(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, i_trfc, i_prov_rfc, dd_dpto, dd_prov_nom, i_email, i_tel, dd_callenum, i_cp, i_colonia);
+                }
+                else
+                {
+                    edita_proveedor(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, i_trfc, i_prov_rfc, dd_dpto, dd_prov_nom, i_email, i_tel, dd_callenum, i_cp, i_colonia);
+                }
+            }
+        }
+
+        protected void gv_prov_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+        }
+
         protected void gv_prov_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             est_prov = 2;
@@ -3309,10 +3443,6 @@ namespace aw_im
                     ddl_est.SelectedValue = est_id.ToString();
                 }
             }
-        }
-
-        protected void gv_prov_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
         }
 
         protected void lkb_prov_agregar_Click(object sender, EventArgs e)
@@ -3528,109 +3658,6 @@ namespace aw_im
             }
         }
 
-        protected void btn_i_prov_cp_Click(object sender, EventArgs e)
-        {
-            string str_cp = i_prov_cp.Value;
-
-            using (bd_imEntities db_sepomex = new bd_imEntities())
-            {
-                var tbl_sepomex = (from c in db_sepomex.inf_sepomex
-                                   where c.d_codigo == str_cp
-                                   select c).ToList();
-
-                i_prov_scolonia.DataSource = tbl_sepomex;
-                i_prov_scolonia.DataTextField = "d_asenta";
-                i_prov_scolonia.DataValueField = "id_asenta_cpcons";
-                i_prov_scolonia.DataBind();
-
-                if (tbl_sepomex.Count == 1)
-                {
-                    i_prov_municipio.Value = tbl_sepomex[0].d_mnpio;
-                    i_prov_estado.Value = tbl_sepomex[0].d_estado;
-                    i_prov_scolonia.Attributes.Add("required", "required");
-                    i_prov_callenum.Attributes.Add("required", "required");
-                }
-                if (tbl_sepomex.Count > 1)
-                {
-                    i_prov_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
-
-                    i_prov_municipio.Value = tbl_sepomex[0].d_mnpio;
-                    i_prov_estado.Value = tbl_sepomex[0].d_estado;
-                    i_prov_scolonia.Attributes.Add("required", "required");
-                    i_prov_callenum.Attributes.Add("required", "required");
-                }
-                else if (tbl_sepomex.Count == 0)
-                {
-                    i_prov_scolonia.Items.Clear();
-                    i_prov_scolonia.Items.Insert(0, new ListItem("Colonia", "0"));
-                    i_prov_municipio.Value = null;
-                    i_prov_estado.Value = null;
-                    i_prov_scolonia.Attributes.Add("required", string.Empty);
-                    i_prov_callenum.Attributes.Add("required", string.Empty);
-                }
-            }
-
-            i_prov_scolonia.Focus();
-        }
-
-        protected void btn_prov_Click(object sender, EventArgs e)
-        {
-            if (est_prov == 0)
-            {
-                Mensaje("Favor de seleccionar una acción.");
-            }
-            else
-            {
-                int i_trfc;
-                if (i_prov_trfc.Value == string.Empty)
-                {
-                    i_trfc = 0;
-                }
-                else
-                {
-                    i_trfc = int.Parse(Request.Form["i_prov_trfc"]);
-                }
-
-                string i_nombres_o = Request.Form["i_prov_nombres"];
-                string i_aparterno_o = Request.Form["i_prov_apaterno"];
-                string i_amaterno_o = Request.Form["i_prov_amaterno"];
-
-                string i_prov_rfc = Request.Form["i_prov_rfc"];
-                string i_prov_nom = Request.Form["i_prov_nom"];
-                string i_dpto = Request.Form["i_prov_dpto"];
-                string i_emailc = Request.Form["i_prov_emailc"];
-                string i_telc = Request.Form["i_prov_telc"];
-                string i_email = Request.Form["i_prov_email"];
-                string i_tel = Request.Form["i_prov_tel"];
-                string i_callenum = Request.Form["i_prov_callenum"];
-                string i_cp = Request.Form["i_prov_cp"];
-                string i_colonia = Request.Form["i_prov_scolonia"];
-
-                TextInfo t_prov_nom = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_dpto = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
-
-                string dd_prov_nom = t_prov_nom.ToTitleCase(i_prov_nom.ToLower());
-                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
-                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
-                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
-                string dd_dpto = t_dpto.ToTitleCase(i_dpto.ToLower());
-                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
-
-                if (est_prov == 1)
-                {
-                    guarda_proveedor(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, i_trfc, i_prov_rfc, dd_dpto, dd_prov_nom, i_email, i_tel, dd_callenum, i_cp, i_colonia);
-                }
-                else
-                {
-                    edita_proveedor(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, i_trfc, i_prov_rfc, dd_dpto, dd_prov_nom, i_email, i_tel, dd_callenum, i_cp, i_colonia);
-                }
-            }
-        }
-
         private void edita_proveedor(string dd_nombres, string dd_apaterno, string dd_amaterno, string i_ecmailc, string i_telc, int i_trfc, string i_prov_rfc, string dd_dpto, string dd_prov_nom, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia)
         {
             int int_ddl = 0;
@@ -3760,13 +3787,91 @@ namespace aw_im
 
         #region ctrl_centro
 
-        protected void lkb_cnt_agregar_Click(object sender, EventArgs e)
+        public string createEmailBody(string detalle_e, string nombrecompleto_reg, string usuario_r, string clave_reg, DateTime registro_e)
+
         {
-            ctrl_cnt();
-            est_cnt = 1;
-            gv_cnt.Visible = false;
-            div_i_cnt.Visible = true;
-            i_cnt_buscar.Text = string.Empty;
+            string body = string.Empty;
+
+            using (StreamReader reader = new StreamReader(Server.MapPath("~/HtmlTemplate.html")))
+
+            {
+                body = reader.ReadToEnd();
+            }
+
+            body = body.Replace("{detalle_envio}", detalle_e);
+
+            body = body.Replace("{nombrecompleto_reg}", nombrecompleto_reg);
+
+            body = body.Replace("{usuario_reg}", usuario_r);
+
+            body = body.Replace("{clave_reg}", clave_reg);
+
+            body = body.Replace("{registro}", registro_e.ToShortDateString());
+
+            return body;
+        }
+
+        protected void btn_cnt_guardar_Click(object sender, EventArgs e)
+        {
+            if (est_cnt == 0)
+            {
+                Mensaje("Favor de seleccionar una acción.");
+            }
+            else
+            {
+                string i_nombres = null, i_aparterno = null, i_amaterno = null, cod_usr = null, dd_clave = null;
+                string i_nombres_o = Request.Form["i_cnt_nombres"];
+                string i_aparterno_o = Request.Form["i_cnt_apaterno"];
+                string i_amaterno_o = Request.Form["i_cnt_amaterno"];
+                Guid i_licencia = Guid.Parse(Request.Form["i_cnt_slicencia"]);
+                string i_cnt_nom = Request.Form["i_cnt_nom"];
+                string i_email = Request.Form["i_cnt_email"];
+                string i_tel = Request.Form["i_cnt_tel"];
+                string i_callenum = Request.Form["i_cnt_callenum"];
+                string i_cp = Request.Form["i_cnt_cp"];
+                string i_colonia = Request.Form["i_cnt_scolonia"];
+                int i_ap = int.Parse("4");
+
+                TextInfo t_cnt_nom = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_cnt_nom = t_cnt_nom.ToTitleCase(i_cnt_nom.ToLower());
+                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
+                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
+                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
+                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
+
+                dd_clave = encrypta.Encrypt("poc123");
+
+                try
+                {
+                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres_o.Trim().ToLower()));
+                    string[] separados;
+
+                    separados = i_nombres_o.Split(" ".ToCharArray());
+
+                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno_o.Trim().ToLower()));
+                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno_o.Trim().ToLower()));
+
+                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
+                }
+                catch
+                {
+                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
+                }
+
+                if (est_cnt == 1)
+                {
+                    guarda_centro(dd_cnt_nom, i_licencia, i_email, i_tel, dd_callenum, i_cp, i_colonia, dd_nombres, dd_apaterno, dd_amaterno, cod_usr, dd_clave, i_ap);
+                }
+                else
+                {
+                    edita_centro(cnt_f, dd_cnt_nom, i_licencia, i_email, i_tel, dd_callenum, i_cp, i_colonia, dd_nombres, dd_apaterno, dd_amaterno);
+                }
+            }
         }
 
         protected void btn_i_cnt_cp_Click(object sender, EventArgs e)
@@ -3812,6 +3917,11 @@ namespace aw_im
             }
 
             i_cnt_scolonia.Focus();
+        }
+
+        protected void gv_cnt_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gv_cnt.PageIndex = e.NewPageIndex;
         }
 
         protected void gv_cnt_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -3952,39 +4062,13 @@ namespace aw_im
             }
         }
 
-        protected void gv_cnt_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        protected void lkb_cnt_agregar_Click(object sender, EventArgs e)
         {
-            gv_cnt.PageIndex = e.NewPageIndex;
-        }
-
-        private void ctrl_cnt()
-        {
-            i_cnt_nombres.Value = string.Empty;
-            i_cnt_apaterno.Value = string.Empty;
-            i_cnt_amaterno.Value = string.Empty;
-            i_cnt_nom.Value = string.Empty;
-            i_cnt_email.Value = string.Empty;
-            i_cnt_tel.Value = string.Empty;
-            i_cnt_callenum.Value = string.Empty;
-            i_cnt_cp.Value = string.Empty;
-
-            i_cnt_slicencia.Items.Clear();
-            i_cnt_scolonia.Items.Clear();
-
-            using (bd_imEntities m_ss = new bd_imEntities())
-            {
-                var i_ma = (from c in m_ss.fact_licencia
-                            select c).OrderBy(x => x.licencia_desc).ToList();
-
-                i_cnt_slicencia.DataSource = i_ma;
-                i_cnt_slicencia.DataTextField = "licencia_desc";
-                i_cnt_slicencia.DataValueField = "licencia_ID";
-                i_cnt_slicencia.DataBind();
-
-                i_cnt_slicencia.Items.Insert(0, new ListItem("*Licencia", string.Empty));
-
-                i_cnt_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
-            }
+            ctrl_cnt();
+            est_cnt = 1;
+            gv_cnt.Visible = false;
+            div_i_cnt.Visible = true;
+            i_cnt_buscar.Text = string.Empty;
         }
 
         protected void lkb_cnt_buscar_Click(object sender, EventArgs e)
@@ -4114,67 +4198,41 @@ namespace aw_im
             }
         }
 
-        protected void btn_cnt_guardar_Click(object sender, EventArgs e)
+        private void ctrl_cnt()
         {
-            if (est_cnt == 0)
+            i_cnt_nombres.Value = string.Empty;
+            i_cnt_apaterno.Value = string.Empty;
+            i_cnt_amaterno.Value = string.Empty;
+            i_cnt_nom.Value = string.Empty;
+            i_cnt_email.Value = string.Empty;
+            i_cnt_tel.Value = string.Empty;
+            i_cnt_callenum.Value = string.Empty;
+            i_cnt_cp.Value = string.Empty;
+
+            i_cnt_slicencia.Items.Clear();
+            i_cnt_scolonia.Items.Clear();
+
+            using (bd_imEntities m_ss = new bd_imEntities())
             {
-                Mensaje("Favor de seleccionar una acción.");
+                var i_ma = (from c in m_ss.fact_licencia
+                            select c).OrderBy(x => x.licencia_desc).ToList();
+
+                i_cnt_slicencia.DataSource = i_ma;
+                i_cnt_slicencia.DataTextField = "licencia_desc";
+                i_cnt_slicencia.DataValueField = "licencia_ID";
+                i_cnt_slicencia.DataBind();
+
+                i_cnt_slicencia.Items.Insert(0, new ListItem("*Licencia", string.Empty));
+
+                i_cnt_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
             }
-            else
-            {
-                string i_nombres = null, i_aparterno = null, i_amaterno = null, cod_usr = null, dd_clave = null;
-                string i_nombres_o = Request.Form["i_cnt_nombres"];
-                string i_aparterno_o = Request.Form["i_cnt_apaterno"];
-                string i_amaterno_o = Request.Form["i_cnt_amaterno"];
-                Guid i_licencia = Guid.Parse(Request.Form["i_cnt_slicencia"]);
-                string i_cnt_nom = Request.Form["i_cnt_nom"];
-                string i_email = Request.Form["i_cnt_email"];
-                string i_tel = Request.Form["i_cnt_tel"];
-                string i_callenum = Request.Form["i_cnt_callenum"];
-                string i_cp = Request.Form["i_cnt_cp"];
-                string i_colonia = Request.Form["i_cnt_scolonia"];
-                int i_ap = int.Parse("4");
+        }
 
-                TextInfo t_cnt_nom = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_callenum = new CultureInfo("es-MX", false).TextInfo;
+        private void e_cnt_email(string correo_e, string usuario_e, string clave_e, string asunto_e, string detalle_e, string smtp_e, int puerto_e, DateTime registro_e, string correo_r, string nombrecompleto_reg, string usuario_r, string clave_reg)
+        {
+            string cuerpo_e = createEmailBody(detalle_e, nombrecompleto_reg, usuario_r, clave_reg, registro_e);
 
-                string dd_cnt_nom = t_cnt_nom.ToTitleCase(i_cnt_nom.ToLower());
-                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
-                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
-                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
-                string dd_callenum = t_callenum.ToTitleCase(i_callenum.ToLower());
-
-                dd_clave = encrypta.Encrypt("poc123");
-
-                try
-                {
-                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres_o.Trim().ToLower()));
-                    string[] separados;
-
-                    separados = i_nombres_o.Split(" ".ToCharArray());
-
-                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno_o.Trim().ToLower()));
-                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno_o.Trim().ToLower()));
-
-                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
-                }
-                catch
-                {
-                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
-                }
-
-                if (est_cnt == 1)
-                {
-                    guarda_centro(dd_cnt_nom, i_licencia, i_email, i_tel, dd_callenum, i_cp, i_colonia, dd_nombres, dd_apaterno, dd_amaterno, cod_usr, dd_clave, i_ap);
-                }
-                else
-                {
-                    edita_centro(cnt_f, dd_cnt_nom, i_licencia, i_email, i_tel, dd_callenum, i_cp, i_colonia, dd_nombres, dd_apaterno, dd_amaterno);
-                }
-            }
+            SendHtmlFormattedEmail(correo_e, asunto_e, cuerpo_e, correo_r, smtp_e, puerto_e, usuario_e, clave_e);
         }
 
         private void edita_centro(Guid cnt_f, string dd_cnt_nom, Guid i_licencia, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, string dd_nombres, string dd_apaterno, string dd_amaterno)
@@ -4268,156 +4326,137 @@ namespace aw_im
                               where c.usr == cod_usr
                               select c).ToList();
 
-                var i_registro = new bd_imEntities();
-                if (i_f_bf.Count == 0)
+                var i_f_cf = (from c in m_usr.inf_centro
+                              where c.centro_nom == dd_cnt_nom
+                              select c).ToList();
+
+                if (i_f_cf.Count == 0)
                 {
-                    var d_cnt = new inf_centro
-                    {
-                        licencia_ID = i_licencia,
-                        centro_tipo_ID = 2,
-                        centro_ID = guid_cnt,
-                        cod_centro = cod_cntf,
-                        empresa_ID = guid_emp,
-                        est_cnt_ID = 1,
-                        centro_nom = dd_cnt_nom,
-                        email = i_email,
-                        telefono = i_tel,
-                        callenum = dd_callenum,
-                        d_codigo = i_cp,
-                        id_asenta_cpcons = i_colonia,
-                        registro = DateTime.Now
-                    };
+                    var i_registro = new bd_imEntities();
 
-                    var d_usr = new inf_usuario
+                    if (i_f_bf.Count == 0)
                     {
-                        centro_ID = guid_cnt,
-                        usr = cod_usr,
-                        clave = dd_clave,
-                        correo_corp = cod_usr + "@intelimundo.com.mx",
-                        usuario_ID = guid_usr,
-                        est_usr_ID = 1,
-                        cod_usr = cod_usrf,
-                        registro = DateTime.Now
-                    };
+                        var d_cnt = new inf_centro
+                        {
+                            licencia_ID = i_licencia,
+                            centro_tipo_ID = 2,
+                            centro_ID = guid_cnt,
+                            cod_centro = cod_cntf,
+                            empresa_ID = guid_emp,
+                            est_cnt_ID = 1,
+                            centro_nom = dd_cnt_nom,
+                            email = i_email,
+                            telefono = i_tel,
+                            callenum = dd_callenum,
+                            d_codigo = i_cp,
+                            id_asenta_cpcons = i_colonia,
+                            registro = DateTime.Now
+                        };
 
-                    var d_cnt_ctrl = new inf_centro_ctrl
+                        var d_usr = new inf_usuario
+                        {
+                            centro_ID = guid_cnt,
+                            usr = cod_usr,
+                            clave = dd_clave,
+                            correo_corp = cod_usr + "@intelimundo.com.mx",
+                            usuario_ID = guid_usr,
+                            est_usr_ID = 1,
+                            cod_usr = cod_usrf,
+                            registro = DateTime.Now
+                        };
+
+                        var d_cnt_ctrl = new inf_centro_ctrl
+                        {
+                            corporativo_ctrl_ID = Guid.NewGuid(),
+                            centro_ID = guid_cnt,
+                            usuario_ID = guid_usr
+                        };
+
+                        var d_usr_p = new inf_usr_personales
+                        {
+                            usr_personales_ID = Guid.NewGuid(),
+                            nombres = dd_nombres,
+                            apaterno = dd_apaterno,
+                            amaterno = dd_amaterno,
+                            usuario_ID = guid_usr,
+                            registro = DateTime.Now
+                        };
+
+                        var d_usr_rh = new inf_usr_rh
+                        {
+                            usr_rh_ID = Guid.NewGuid(),
+                            fecha_ingreso = DateTime.Now,
+                            area_ID = i_ap,
+                            perfil_ID = i_ap,
+                            usuario_ID = guid_usr,
+                            registro = DateTime.Now
+                        };
+
+                        var d_usr_cont = new inf_usr_contacto
+                        {
+                            usr_contacto_ID = Guid.NewGuid(),
+                            usuario_ID = guid_usr,
+                            correo = i_email,
+                            registro = DateTime.Now
+                        };
+
+                        i_registro.inf_centro.Add(d_cnt);
+                        i_registro.inf_centro_ctrl.Add(d_cnt_ctrl);
+                        i_registro.inf_usuario.Add(d_usr);
+                        i_registro.inf_usr_personales.Add(d_usr_p);
+                        i_registro.inf_usr_rh.Add(d_usr_rh);
+                        i_registro.inf_usr_contacto.Add(d_usr_cont);
+                        i_registro.SaveChanges();
+                    }
+                    else
                     {
-                        corporativo_ctrl_ID = Guid.NewGuid(),
-                        centro_ID = guid_cnt,
-                        usuario_ID = guid_usr
-                    };
+                        var d_cnt = new inf_centro
+                        {
+                            licencia_ID = i_licencia,
+                            centro_tipo_ID = 2,
+                            centro_ID = guid_cnt,
+                            cod_centro = cod_cntf,
+                            empresa_ID = guid_emp,
+                            est_cnt_ID = 1,
+                            centro_nom = dd_cnt_nom,
+                            email = i_email,
+                            telefono = i_tel,
+                            callenum = dd_callenum,
+                            d_codigo = i_cp,
+                            id_asenta_cpcons = i_colonia,
+                            registro = DateTime.Now
+                        };
 
-                    var d_usr_p = new inf_usr_personales
-                    {
-                        usr_personales_ID = Guid.NewGuid(),
-                        nombres = dd_nombres,
-                        apaterno = dd_apaterno,
-                        amaterno = dd_amaterno,
-                        usuario_ID = guid_usr,
-                        registro = DateTime.Now
-                    };
+                        var d_cnt_ctrl = new inf_centro_ctrl
+                        {
+                            corporativo_ctrl_ID = Guid.NewGuid(),
+                            centro_ID = guid_cnt,
+                            usuario_ID = i_f_bf[0].usuario_ID
+                        };
 
-                    var d_usr_rh = new inf_usr_rh
-                    {
-                        usr_rh_ID = Guid.NewGuid(),
-                        fecha_ingreso = DateTime.Now,
-                        area_ID = i_ap,
-                        perfil_ID = i_ap,
-                        usuario_ID = guid_usr,
-                        registro = DateTime.Now
-                    };
+                        i_registro.inf_centro.Add(d_cnt);
+                        i_registro.inf_centro_ctrl.Add(d_cnt_ctrl);
 
-                    var d_usr_cont = new inf_usr_contacto
-                    {
-                        usr_contacto_ID = Guid.NewGuid(),
-                        usuario_ID = guid_usr,
-                        correo = i_email,
-                        registro = DateTime.Now
-                    };
+                        i_registro.SaveChanges();
+                    }
 
-                    i_registro.inf_centro.Add(d_cnt);
-                    i_registro.inf_centro_ctrl.Add(d_cnt_ctrl);
-                    i_registro.inf_usuario.Add(d_usr);
-                    i_registro.inf_usr_personales.Add(d_usr_p);
-                    i_registro.inf_usr_rh.Add(d_usr_rh);
-                    i_registro.inf_usr_contacto.Add(d_usr_cont);
-                    i_registro.SaveChanges();
+                    var i_ev = (from c in m_usr.inf_email_env
+
+                                select c).FirstOrDefault();
+
+                    string f_clave = i_ev.clave.ToString();
+                    string detalle_e = "Registro de Centro Intelimundo y Gerente, satisfactorio.";
+                    string nomcompleto = dd_nombres + " " + dd_apaterno + " " + dd_amaterno;
+
+                    e_cnt_email(i_ev.email, i_ev.usuario, i_ev.clave, i_ev.asunto, detalle_e, i_ev.servidor_smtp, int.Parse(i_ev.puerto.ToString()), DateTime.Now, i_email, nomcompleto, cod_usr, "poc123");
+
+                    Mensaje("Datos guardados con éxito, favor de revisar su correo donde se le enviaran las credenciales de acceso, revisar su bandeja de spam");
                 }
                 else
                 {
-                    var d_cnt = new inf_centro
-                    {
-                        licencia_ID = i_licencia,
-                        centro_tipo_ID = 2,
-                        centro_ID = guid_cnt,
-                        cod_centro = cod_cntf,
-                        empresa_ID = guid_emp,
-                        est_cnt_ID = 1,
-                        centro_nom = dd_cnt_nom,
-                        email = i_email,
-                        telefono = i_tel,
-                        callenum = dd_callenum,
-                        d_codigo = i_cp,
-                        id_asenta_cpcons = i_colonia,
-                        registro = DateTime.Now
-                    };
-
-                    var d_cnt_ctrl = new inf_centro_ctrl
-                    {
-                        corporativo_ctrl_ID = Guid.NewGuid(),
-                        centro_ID = guid_cnt,
-                        usuario_ID = i_f_bf[0].usuario_ID
-                    };
-
-                    i_registro.inf_centro.Add(d_cnt);
-                    i_registro.inf_centro_ctrl.Add(d_cnt_ctrl);
-
-                    i_registro.SaveChanges();
+                    Mensaje("Nombre de centro, existe en la base de datos, favor de revisar.");
                 }
-
-                var i_ev = (from c in m_usr.inf_email_env
-
-                            select c).FirstOrDefault();
-
-                string f_clave = i_ev.clave.ToString();
-                string detalle_e = "Registro de Centro Intelimundo y Gerente, satisfactorio.";
-                string nomcompleto = dd_nombres + " " + dd_apaterno + " " + dd_amaterno;
-
-                e_cnt_email(i_ev.email, i_ev.usuario, i_ev.clave, i_ev.asunto, detalle_e, i_ev.servidor_smtp, int.Parse(i_ev.puerto.ToString()), DateTime.Now, i_email, nomcompleto, cod_usr, "poc123");
-                ctrl_cnt();
-                Mensaje("Datos guardados con éxito, favor de revisar su correo donde se le enviaran las credenciales de acceso, revisar su bandeja de spam");
             }
-        }
-
-        private void e_cnt_email(string correo_e, string usuario_e, string clave_e, string asunto_e, string detalle_e, string smtp_e, int puerto_e, DateTime registro_e, string correo_r, string nombrecompleto_reg, string usuario_r, string clave_reg)
-        {
-            string cuerpo_e = createEmailBody(detalle_e, nombrecompleto_reg, usuario_r, clave_reg, registro_e);
-
-            SendHtmlFormattedEmail(correo_e, asunto_e, cuerpo_e, correo_r, smtp_e, puerto_e, usuario_e, clave_e);
-        }
-
-        public string createEmailBody(string detalle_e, string nombrecompleto_reg, string usuario_r, string clave_reg, DateTime registro_e)
-
-        {
-            string body = string.Empty;
-
-            using (StreamReader reader = new StreamReader(Server.MapPath("~/HtmlTemplate.html")))
-
-            {
-                body = reader.ReadToEnd();
-            }
-
-            body = body.Replace("{detalle_envio}", detalle_e);
-
-            body = body.Replace("{nombrecompleto_reg}", nombrecompleto_reg);
-
-            body = body.Replace("{usuario_reg}", usuario_r);
-
-            body = body.Replace("{clave_reg}", clave_reg);
-
-            body = body.Replace("{registro}", registro_e.ToShortDateString());
-
-            return body;
         }
 
         private void SendHtmlFormattedEmail(string correo_e, string asunto_e, string cuerpo_e, string correo_r, string smtp_e, int puerto_e, string usuario_e, string clave_e)
@@ -4466,6 +4505,390 @@ namespace aw_im
         #endregion ctrl_centro
 
         #region ctrl_usuario
+
+        protected void btn_usr_ctrl_Click(object sender, EventArgs e)
+        {
+            if (est_usr == 0)
+            {
+                Mensaje("Favor de seleccionar una acción.");
+            }
+            else
+            {
+                Guid guid_usr = Guid.NewGuid();
+
+                string i_nombres = string.Empty, i_aparterno = string.Empty, i_amaterno = string.Empty, cod_usr = string.Empty, str_clave = string.Empty;
+                string i_nombres_o = Request.Form["i_nombres"];
+                string i_aparterno_o = Request.Form["i_apaterno"];
+                string i_amaterno_o = Request.Form["i_amaterno"];
+                str_clave = encrypta.Encrypt("poc123");
+
+                try
+                {
+                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres_o.Trim().ToLower()));
+                    string[] separados;
+
+                    separados = i_nombres_o.Split(" ".ToCharArray());
+
+                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno_o.Trim().ToLower()));
+                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno_o.Trim().ToLower()));
+
+                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
+
+                    i_usr.Value = cod_usr;
+                    i_clave.Value = str_clave;
+                    i_emal_c.Value = cod_usr + "@intelimundo.com.mx";
+                    btn_usr_guarda.Visible = true;
+                }
+                catch
+                {
+                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
+                }
+            }
+        }
+
+        protected void btn_usr_guarda_Click(object sender, EventArgs e)
+        {
+            if (est_usr == 0)
+            {
+                Mensaje("Favor de seleccionar una acción.");
+            }
+            else
+            {
+                int i_area = int.Parse(Request.Form["s_area"]);
+                int i_perfil = int.Parse(Request.Form["s_perfil"]);
+                int i_genero = int.Parse(Request.Form["s_genero"]);
+                DateTime d_nacimiento = DateTime.Parse(Request.Form["i_nacimiento"]);
+                int int_ddl = 0;
+
+                string i_nombres_o = Request.Form["i_nombres"];
+                string i_aparterno_o = Request.Form["i_apaterno"];
+                string i_amaterno_o = Request.Form["i_amaterno"];
+                string i_f_b = Request.Form["i_usr"];
+                string i_emal_p = Request.Form["i_emal_p"];
+                string i_emal_c = Request.Form["i_emal_c"];
+
+                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
+                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
+
+                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
+                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
+                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
+                string dd_clave;
+
+                if (string.IsNullOrEmpty(i_f_b))
+                {
+                    Mensaje("Favor de generar datos de control");
+                }
+                else
+                {
+                    if (est_usr == 1)
+                    {
+                        dd_clave = encrypta.Encrypt("poc123");
+
+                        agrega_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
+                    }
+                    else
+                    {
+                        dd_clave = encrypta.Encrypt(Request.Form["i_clave"]);
+
+                        using (var m_usrs = new bd_imEntities())
+                        {
+                            var i_f_b_v = (from i_u in m_usrs.inf_usuario
+                                           where i_u.usuario_ID == usrf_ID
+                                           select i_u).FirstOrDefault();
+
+                            if (i_f_b_v.usr != i_f_b)
+                            {
+                                var i_f_b_f = (from i_u in m_usrs.inf_usuario
+                                               where i_u.usuario_ID == usrf_ID
+                                               select i_u).FirstOrDefault();
+
+                                if (i_f_b_f.usr == i_f_b)
+                                {
+                                    div_i_usr.Visible = false;
+                                    ctrl_usr();
+                                    Mensaje("Usuario ya existe, favor de re-intentar.");
+                                }
+                                else
+                                {
+                                    actualiza_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
+                                    div_i_usr.Visible = false;
+                                    ctrl_usr();
+                                    Mensaje("Usuario actualizado con éxito");
+                                }
+                            }
+                            else
+                            {
+                                actualiza_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
+                                div_i_usr.Visible = false;
+                                ctrl_usr();
+                                Mensaje("Usuario actualizado con éxito");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        protected void gv_usrs_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gv_usrs.PageIndex = e.NewPageIndex;
+
+            div_i_usr.Visible = false;
+            string f_busqueda = string.Empty;
+            int f_usrp = 0;
+
+            if (string.IsNullOrEmpty(i_usuario_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
+
+                    if (int_idperf == 3)
+                    {
+                        f_usrp = 2;
+                    }
+
+                    using (bd_imEntities md_fb = new bd_imEntities())
+                    {
+                        var i_f_b = (from i_u in md_fb.inf_usuario
+                                     join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                     join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
+                                     where i_rh.perfil_ID != f_usrp
+                                     where i_u.usuario_ID != usr_ID
+                                     select new
+                                     {
+                                         i_u.usuario_ID,
+                                         i_u.cod_usr,
+                                         nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                         i_u.registro
+                                     }).OrderBy(x => x.cod_usr).ToList();
+
+                        if (i_f_b.Count == 0)
+                        {
+                            gv_usrs.DataSource = i_f_b;
+                            gv_usrs.DataBind();
+                            gv_usrs.Visible = true;
+                            gv_usrs.Visible = true;
+
+                            Mensaje("Usuario no encontrado.");
+                        }
+                        else
+                        {
+                            gv_usrs.DataSource = i_f_b;
+                            gv_usrs.DataBind();
+                            gv_usrs.Visible = true;
+                            gv_usrs.Visible = true;
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
+                        string n_fv;
+                        Guid guid_usrid;
+                        Char char_s = '|';
+                        string d_rub = f_busqueda;
+                        String[] de_rub = d_rub.Trim().Split(char_s);
+
+                        n_fv = de_rub[1].Trim();
+
+                        using (bd_imEntities m_usrf = new bd_imEntities())
+                        {
+                            var i_f_bf = (from c in m_usrf.inf_usuario
+                                          where c.cod_usr == n_fv
+                                          select c).FirstOrDefault();
+
+                            guid_usrid = i_f_bf.usuario_ID;
+
+                            var i_f_bff = (from i_u in m_usrf.inf_usuario
+                                           join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                           where i_u.usuario_ID == guid_usrid
+                                           select new
+                                           {
+                                               i_u.usuario_ID,
+                                               i_u.cod_usr,
+                                               nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                               i_u.registro
+                                           }).OrderBy(x => x.cod_usr).ToList();
+
+                            if (i_f_bff.Count == 0)
+                            {
+                                gv_usrs.DataSource = i_f_bff;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+
+                                Mensaje("Usuario no encontrado.");
+                            }
+                            else
+                            {
+                                gv_usrs.DataSource = i_f_bff;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        //limp_usr_ctrl();
+                        //div_prospecto.Visible = false;
+                        Mensaje("Usuario no encontrado.");
+                    }
+                }
+            }
+        }
+
+        protected void gv_usrs_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            est_usr = 2;
+            if (e.CommandName == "btn_usr_ve")
+            {
+                try
+                {
+                    GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
+
+                    usrf_ID = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
+                    btn_usr_ctrl.Enabled = false;
+                    i_usr.Attributes.Remove("disabled");
+                    i_clave.Attributes.Remove("disabled");
+                    i_emal_c.Attributes.Remove("disabled");
+
+                    using (bd_imEntities edm_usr = new bd_imEntities())
+                    {
+                        var i_f_bf = (from i_u in edm_usr.inf_usuario
+                                      join i_uh in edm_usr.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
+                                      join i_up in edm_usr.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                      where i_u.usuario_ID == usrf_ID
+                                      select new
+                                      {
+                                          i_u.usuario_ID,
+                                          i_u.est_usr_ID,
+                                          i_u.cod_usr,
+                                          i_u.usr,
+                                          i_u.clave,
+                                          i_u.correo_corp,
+                                          i_uh.area_ID,
+                                          i_uh.perfil_ID,
+                                          i_uh.comentarios,
+                                          i_uh.fecha_ingreso,
+                                          i_up.nombres,
+                                          i_up.apaterno,
+                                          i_up.amaterno,
+                                          i_up.genero_ID,
+                                          i_up.estcivil_ID,
+                                          i_up.cumple,
+                                          i_up.hijos,
+                                          i_up.nss,
+                                          i_up.curp,
+                                          i_up.licencia,
+                                          i_up.rfc,
+                                      }).FirstOrDefault();
+
+                        s_area.Value = i_f_bf.area_ID.ToString();
+                        s_perfil.Value = i_f_bf.perfil_ID.ToString();
+                        s_genero.Value = i_f_bf.genero_ID.ToString();
+                        //ddl_usr_estciv.SelectedValue = i_f_b.estcivil_ID.ToString();
+                        DateTime f_nac = DateTime.MinValue;
+                        if (i_f_bf.cumple == null)
+                        {
+                        }
+                        else
+                        {
+                            f_nac = Convert.ToDateTime(i_f_bf.cumple);
+                            i_nacimiento.Value = f_nac.ToString("yyyy-MM-dd");
+                        }
+
+                        DateTime f_ing = Convert.ToDateTime(i_f_bf.fecha_ingreso);
+
+                        i_nombres.Value = i_f_bf.nombres;
+                        i_apaterno.Value = i_f_bf.apaterno;
+                        i_amaterno.Value = i_f_bf.amaterno;
+
+                        i_usr.Value = i_f_bf.usr;
+                        i_emal_c.Value = i_f_bf.correo_corp;
+
+                        var i_f_b_ff = (from i_u in edm_usr.inf_usuario
+                                        join i_up in edm_usr.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                        where i_u.usuario_ID == usrf_ID
+                                        select new
+                                        {
+                                            i_u.usuario_ID,
+                                            i_u.cod_usr,
+                                            nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                            i_u.registro
+                                        }).OrderBy(x => x.cod_usr).ToList();
+
+                        if (i_f_b_ff.Count == 0)
+                        {
+                            gv_usrs.DataSource = i_f_b_ff;
+                            gv_usrs.DataBind();
+                            gv_usrs.Visible = true;
+                            gv_usrs.Visible = true;
+
+                            Mensaje("Usuario no encontrado.");
+                        }
+                        else
+                        {
+                            gv_usrs.DataSource = i_f_b_ff;
+                            gv_usrs.DataBind();
+                            gv_usrs.Visible = true;
+                            gv_usrs.Visible = true;
+                        }
+
+                        div_i_usr.Visible = true;
+                    }
+                }
+                catch
+                {
+                    ctrl_usr();
+                    div_i_usr.Visible = true;
+                    Mensaje("Usuario no encontrado.");
+                }
+            }
+        }
+
+        protected void gv_usrs_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                Guid usr_ID = Guid.Parse(e.Row.Cells[0].Text);
+                int est_id;
+
+                using (bd_imEntities m_usr = new bd_imEntities())
+                {
+                    var i_f_b = (from md_usr in m_usr.inf_usuario
+                                 where md_usr.usuario_ID == usr_ID
+                                 select new
+                                 {
+                                     md_usr.est_usr_ID,
+                                 }).FirstOrDefault();
+
+                    est_id = int.Parse(i_f_b.est_usr_ID.ToString());
+
+                    DropDownList ddl_est = (e.Row.FindControl("ddl_usr_estatus") as DropDownList);
+
+                    var tbl_sepomex = (from c in m_usr.fact_est_usr
+                                       select c).ToList();
+
+                    ddl_est.DataSource = tbl_sepomex;
+
+                    ddl_est.DataTextField = "est_usr_desc";
+                    ddl_est.DataValueField = "est_usr_ID";
+                    ddl_est.DataBind();
+                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
+                    ddl_est.SelectedValue = est_id.ToString();
+                }
+            }
+        }
 
         protected void lkb_usuario_agregar_Click(object sender, EventArgs e)
         {
@@ -4665,128 +5088,50 @@ namespace aw_im
             }
         }
 
-        protected void btn_usr_ctrl_Click(object sender, EventArgs e)
+        private void actualiza_usuario(Guid usrf_ID, int int_ddl, int i_area, int i_perfil, int i_genero, DateTime d_nacimiento, string i_f_b, string dd_clave, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_emal_p, string i_emal_c)
         {
-            if (est_usr == 0)
+            foreach (GridViewRow row in gv_usrs.Rows)
             {
-                Mensaje("Favor de seleccionar una acción.");
-            }
-            else
-            {
-                Guid guid_usr = Guid.NewGuid();
-
-                string i_nombres = string.Empty, i_aparterno = string.Empty, i_amaterno = string.Empty, cod_usr = string.Empty, str_clave = string.Empty;
-                string i_nombres_o = Request.Form["i_nombres"];
-                string i_aparterno_o = Request.Form["i_apaterno"];
-                string i_amaterno_o = Request.Form["i_amaterno"];
-                str_clave = encrypta.Encrypt("poc123");
-
-                try
+                if (row.RowType == DataControlRowType.DataRow)
                 {
-                    i_nombres = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_nombres_o.Trim().ToLower()));
-                    string[] separados;
+                    DropDownList dl = (DropDownList)row.FindControl("ddl_usr_estatus");
 
-                    separados = i_nombres_o.Split(" ".ToCharArray());
-
-                    i_aparterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_aparterno_o.Trim().ToLower()));
-                    i_amaterno = RemoveSpecialCharacters(RemoveAccentsWithRegEx(i_amaterno_o.Trim().ToLower()));
-
-                    cod_usr = left_right_mid.left(i_nombres, 1) + i_aparterno + left_right_mid.left(i_amaterno, 1);
-
-                    i_usr.Value = cod_usr;
-                    i_clave.Value = str_clave;
-                    i_emal_c.Value = cod_usr + "@intelimundo.com.mx";
-                    btn_usr_guarda.Visible = true;
-                }
-                catch
-                {
-                    Mensaje("Se requiere mínimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
+                    int_ddl = int.Parse(dl.SelectedValue);
                 }
             }
-        }
 
-        protected void btn_usr_guarda_Click(object sender, EventArgs e)
-        {
-            if (est_usr == 0)
+            using (var m_usrs = new bd_imEntities())
             {
-                Mensaje("Favor de seleccionar una acción.");
-            }
-            else
-            {
-                int i_area = int.Parse(Request.Form["s_area"]);
-                int i_perfil = int.Parse(Request.Form["s_perfil"]);
-                int i_genero = int.Parse(Request.Form["s_genero"]);
-                DateTime d_nacimiento = DateTime.Parse(Request.Form["i_nacimiento"]);
-                int int_ddl = 0;
+                var i_f_bs_rh = (from c in m_usrs.inf_usr_rh
+                                 where c.usuario_ID == usrf_ID
+                                 select c).FirstOrDefault();
 
-                string i_nombres_o = Request.Form["i_nombres"];
-                string i_aparterno_o = Request.Form["i_apaterno"];
-                string i_amaterno_o = Request.Form["i_amaterno"];
-                string i_f_b = Request.Form["i_usr"];
-                string i_emal_p = Request.Form["i_emal_p"];
-                string i_emal_c = Request.Form["i_emal_c"];
+                i_f_bs_rh.area_ID = i_area;
+                i_f_bs_rh.perfil_ID = i_perfil;
 
-                TextInfo t_nombres = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_apateno = new CultureInfo("es-MX", false).TextInfo;
-                TextInfo t_amateno = new CultureInfo("es-MX", false).TextInfo;
+                m_usrs.SaveChanges();
 
-                string dd_nombres = t_nombres.ToTitleCase(i_nombres_o.ToLower());
-                string dd_apaterno = t_apateno.ToTitleCase(i_aparterno_o.ToLower());
-                string dd_amaterno = t_amateno.ToTitleCase(i_amaterno_o.ToLower());
-                string dd_clave;
+                var i_f_bs_personales = (from c in m_usrs.inf_usr_personales
+                                         where c.usuario_ID == usrf_ID
+                                         select c).FirstOrDefault();
 
-                if (string.IsNullOrEmpty(i_f_b))
-                {
-                    Mensaje("Favor de generar datos de control");
-                }
-                else
-                {
-                    if (est_usr == 1)
-                    {
-                        dd_clave = encrypta.Encrypt("poc123");
+                i_f_bs_personales.nombres = dd_nombres;
+                i_f_bs_personales.apaterno = dd_apaterno;
+                i_f_bs_personales.amaterno = dd_amaterno;
+                i_f_bs_personales.genero_ID = i_genero;
+                i_f_bs_personales.cumple = d_nacimiento;
 
-                        agrega_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
-                    }
-                    else
-                    {
-                        dd_clave = encrypta.Encrypt(Request.Form["i_clave"]);
+                m_usrs.SaveChanges();
 
-                        using (var m_usrs = new bd_imEntities())
-                        {
-                            var i_f_b_v = (from i_u in m_usrs.inf_usuario
-                                           where i_u.usuario_ID == usrf_ID
-                                           select i_u).FirstOrDefault();
+                var i_f_bs = (from c in m_usrs.inf_usuario
+                              where c.usuario_ID == usrf_ID
+                              select c).FirstOrDefault();
 
-                            if (i_f_b_v.usr != i_f_b)
-                            {
-                                var i_f_b_f = (from i_u in m_usrs.inf_usuario
-                                               where i_u.usuario_ID == usrf_ID
-                                               select i_u).FirstOrDefault();
-
-                                if (i_f_b_f.usr == i_f_b)
-                                {
-                                    div_i_usr.Visible = false;
-                                    ctrl_usr();
-                                    Mensaje("Usuario ya existe, favor de re-intentar.");
-                                }
-                                else
-                                {
-                                    actualiza_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
-                                    div_i_usr.Visible = false;
-                                    ctrl_usr();
-                                    Mensaje("Usuario actualizado con éxito");
-                                }
-                            }
-                            else
-                            {
-                                actualiza_usuario(usrf_ID, int_ddl, i_area, i_perfil, i_genero, d_nacimiento, i_f_b, dd_clave, dd_nombres, dd_apaterno, dd_amaterno, i_emal_p, i_emal_c);
-                                div_i_usr.Visible = false;
-                                ctrl_usr();
-                                Mensaje("Usuario actualizado con éxito");
-                            }
-                        }
-                    }
-                }
+                i_f_bs.est_usr_ID = int_ddl;
+                i_f_bs.usr = i_f_b;
+                i_f_bs.clave = dd_clave;
+                i_f_bs.correo_corp = i_emal_c;
+                m_usrs.SaveChanges();
             }
         }
 
@@ -4875,312 +5220,6 @@ namespace aw_im
             }
         }
 
-        private void actualiza_usuario(Guid usrf_ID, int int_ddl, int i_area, int i_perfil, int i_genero, DateTime d_nacimiento, string i_f_b, string dd_clave, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_emal_p, string i_emal_c)
-        {
-            foreach (GridViewRow row in gv_usrs.Rows)
-            {
-                if (row.RowType == DataControlRowType.DataRow)
-                {
-                    DropDownList dl = (DropDownList)row.FindControl("ddl_usr_estatus");
-
-                    int_ddl = int.Parse(dl.SelectedValue);
-                }
-            }
-
-            using (var m_usrs = new bd_imEntities())
-            {
-                var i_f_bs_rh = (from c in m_usrs.inf_usr_rh
-                                 where c.usuario_ID == usrf_ID
-                                 select c).FirstOrDefault();
-
-                i_f_bs_rh.area_ID = i_area;
-                i_f_bs_rh.perfil_ID = i_perfil;
-
-                m_usrs.SaveChanges();
-
-                var i_f_bs_personales = (from c in m_usrs.inf_usr_personales
-                                         where c.usuario_ID == usrf_ID
-                                         select c).FirstOrDefault();
-
-                i_f_bs_personales.nombres = dd_nombres;
-                i_f_bs_personales.apaterno = dd_apaterno;
-                i_f_bs_personales.amaterno = dd_amaterno;
-                i_f_bs_personales.genero_ID = i_genero;
-                i_f_bs_personales.cumple = d_nacimiento;
-
-                m_usrs.SaveChanges();
-
-                var i_f_bs = (from c in m_usrs.inf_usuario
-                              where c.usuario_ID == usrf_ID
-                              select c).FirstOrDefault();
-
-                i_f_bs.est_usr_ID = int_ddl;
-                i_f_bs.usr = i_f_b;
-                i_f_bs.clave = dd_clave;
-                i_f_bs.correo_corp = i_emal_c;
-                m_usrs.SaveChanges();
-            }
-        }
-
-        protected void gv_usrs_RowCommand(object sender, GridViewCommandEventArgs e)
-        {
-            est_usr = 2;
-            if (e.CommandName == "btn_usr_ve")
-            {
-                try
-                {
-                    GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
-
-                    usrf_ID = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
-                    btn_usr_ctrl.Enabled = false;
-                    i_usr.Attributes.Remove("disabled");
-                    i_clave.Attributes.Remove("disabled");
-                    i_emal_c.Attributes.Remove("disabled");
-
-                    using (bd_imEntities edm_usr = new bd_imEntities())
-                    {
-                        var i_f_bf = (from i_u in edm_usr.inf_usuario
-                                      join i_uh in edm_usr.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
-                                      join i_up in edm_usr.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                      where i_u.usuario_ID == usrf_ID
-                                      select new
-                                      {
-                                          i_u.usuario_ID,
-                                          i_u.est_usr_ID,
-                                          i_u.cod_usr,
-                                          i_u.usr,
-                                          i_u.clave,
-                                          i_u.correo_corp,
-                                          i_uh.area_ID,
-                                          i_uh.perfil_ID,
-                                          i_uh.comentarios,
-                                          i_uh.fecha_ingreso,
-                                          i_up.nombres,
-                                          i_up.apaterno,
-                                          i_up.amaterno,
-                                          i_up.genero_ID,
-                                          i_up.estcivil_ID,
-                                          i_up.cumple,
-                                          i_up.hijos,
-                                          i_up.nss,
-                                          i_up.curp,
-                                          i_up.licencia,
-                                          i_up.rfc,
-                                      }).FirstOrDefault();
-
-                        s_area.Value = i_f_bf.area_ID.ToString();
-                        s_perfil.Value = i_f_bf.perfil_ID.ToString();
-                        s_genero.Value = i_f_bf.genero_ID.ToString();
-                        //ddl_usr_estciv.SelectedValue = i_f_b.estcivil_ID.ToString();
-                        DateTime f_nac = DateTime.MinValue;
-                        if (i_f_bf.cumple == null)
-                        {
-                        }
-                        else
-                        {
-                            f_nac = Convert.ToDateTime(i_f_bf.cumple);
-                            i_nacimiento.Value = f_nac.ToString("yyyy-MM-dd");
-                        }
-
-                        DateTime f_ing = Convert.ToDateTime(i_f_bf.fecha_ingreso);
-
-                        i_nombres.Value = i_f_bf.nombres;
-                        i_apaterno.Value = i_f_bf.apaterno;
-                        i_amaterno.Value = i_f_bf.amaterno;
-
-                        i_usr.Value = i_f_bf.usr;
-                        i_emal_c.Value = i_f_bf.correo_corp;
-
-                        var i_f_b_ff = (from i_u in edm_usr.inf_usuario
-                                        join i_up in edm_usr.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                        where i_u.usuario_ID == usrf_ID
-                                        select new
-                                        {
-                                            i_u.usuario_ID,
-                                            i_u.cod_usr,
-                                            nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
-                                            i_u.registro
-                                        }).OrderBy(x => x.cod_usr).ToList();
-
-                        if (i_f_b_ff.Count == 0)
-                        {
-                            gv_usrs.DataSource = i_f_b_ff;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
-
-                            Mensaje("Usuario no encontrado.");
-                        }
-                        else
-                        {
-                            gv_usrs.DataSource = i_f_b_ff;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
-                        }
-
-                        div_i_usr.Visible = true;
-                    }
-                }
-                catch
-                {
-                    ctrl_usr();
-                    div_i_usr.Visible = true;
-                    Mensaje("Usuario no encontrado.");
-                }
-            }
-        }
-
-        protected void gv_usrs_RowDataBound(object sender, GridViewRowEventArgs e)
-        {
-            if (e.Row.RowType == DataControlRowType.DataRow)
-            {
-                Guid usr_ID = Guid.Parse(e.Row.Cells[0].Text);
-                int est_id;
-
-                using (bd_imEntities m_usr = new bd_imEntities())
-                {
-                    var i_f_b = (from md_usr in m_usr.inf_usuario
-                                 where md_usr.usuario_ID == usr_ID
-                                 select new
-                                 {
-                                     md_usr.est_usr_ID,
-                                 }).FirstOrDefault();
-
-                    est_id = int.Parse(i_f_b.est_usr_ID.ToString());
-
-                    DropDownList ddl_est = (e.Row.FindControl("ddl_usr_estatus") as DropDownList);
-
-                    var tbl_sepomex = (from c in m_usr.fact_est_usr
-                                       select c).ToList();
-
-                    ddl_est.DataSource = tbl_sepomex;
-
-                    ddl_est.DataTextField = "est_usr_desc";
-                    ddl_est.DataValueField = "est_usr_ID";
-                    ddl_est.DataBind();
-                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
-                    ddl_est.SelectedValue = est_id.ToString();
-                }
-            }
-        }
-
-        protected void gv_usrs_PageIndexChanging(object sender, GridViewPageEventArgs e)
-        {
-            gv_usrs.PageIndex = e.NewPageIndex;
-
-            div_i_usr.Visible = false;
-            string f_busqueda = string.Empty;
-            int f_usrp = 0;
-
-            if (string.IsNullOrEmpty(i_usuario_buscar.Text))
-            {
-            }
-            else
-            {
-                f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
-                if (f_busqueda == "TODO")
-                {
-                    f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
-
-                    if (int_idperf == 3)
-                    {
-                        f_usrp = 2;
-                    }
-
-                    using (bd_imEntities md_fb = new bd_imEntities())
-                    {
-                        var i_f_b = (from i_u in md_fb.inf_usuario
-                                     join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                     join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
-                                     where i_rh.perfil_ID != f_usrp
-                                     where i_u.usuario_ID != usr_ID
-                                     select new
-                                     {
-                                         i_u.usuario_ID,
-                                         i_u.cod_usr,
-                                         nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
-                                         i_u.registro
-                                     }).OrderBy(x => x.cod_usr).ToList();
-
-                        if (i_f_b.Count == 0)
-                        {
-                            gv_usrs.DataSource = i_f_b;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
-
-                            Mensaje("Usuario no encontrado.");
-                        }
-                        else
-                        {
-                            gv_usrs.DataSource = i_f_b;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
-                        }
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
-                        string n_fv;
-                        Guid guid_usrid;
-                        Char char_s = '|';
-                        string d_rub = f_busqueda;
-                        String[] de_rub = d_rub.Trim().Split(char_s);
-
-                        n_fv = de_rub[1].Trim();
-
-                        using (bd_imEntities m_usrf = new bd_imEntities())
-                        {
-                            var i_f_bf = (from c in m_usrf.inf_usuario
-                                          where c.cod_usr == n_fv
-                                          select c).FirstOrDefault();
-
-                            guid_usrid = i_f_bf.usuario_ID;
-
-                            var i_f_bff = (from i_u in m_usrf.inf_usuario
-                                           join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                           where i_u.usuario_ID == guid_usrid
-                                           select new
-                                           {
-                                               i_u.usuario_ID,
-                                               i_u.cod_usr,
-                                               nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
-                                               i_u.registro
-                                           }).OrderBy(x => x.cod_usr).ToList();
-
-                            if (i_f_bff.Count == 0)
-                            {
-                                gv_usrs.DataSource = i_f_bff;
-                                gv_usrs.DataBind();
-                                gv_usrs.Visible = true;
-                                gv_usrs.Visible = true;
-
-                                Mensaje("Usuario no encontrado.");
-                            }
-                            else
-                            {
-                                gv_usrs.DataSource = i_f_bff;
-                                gv_usrs.DataBind();
-                                gv_usrs.Visible = true;
-                                gv_usrs.Visible = true;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        //limp_usr_ctrl();
-                        //div_prospecto.Visible = false;
-                        Mensaje("Usuario no encontrado.");
-                    }
-                }
-            }
-        }
-
         private void ctrl_usr()
         {
             str_pnlID = "pnl_usr";
@@ -5195,12 +5234,12 @@ namespace aw_im
             if (int_idperf == 2 || int_idperf == 3)
             {
                 f_usr_a = new int[] { 3, 4 };
-                f_usr_p = new int[] { 3, 4, 5, 6, 7 };
+                f_usr_p = new int[] { 3, 4, 5, 6, 7, 8, 9, 10 };
             }
             else if (int_idperf == 4)
             {
                 f_usr_a = new int[] { 4 };
-                f_usr_p = new int[] { 4, 5, 6 };
+                f_usr_p = new int[] { 5, 6, 7, 8, 9, 10 };
             }
             else if (int_idperf == 5)
             {
@@ -5260,30 +5299,6 @@ namespace aw_im
 
         #region configuración de envío
 
-        private void ctrl_config()
-        {
-            using (bd_imEntities m_comp = new bd_imEntities())
-            {
-                var i_comp = (from i_i in m_comp.inf_email_env
-                              select new
-                              {
-                                  i_i.email,
-                                  i_i.usuario,
-                                  i_i.clave,
-                                  i_i.asunto,
-                                  i_i.servidor_smtp,
-                                  i_i.puerto,
-                              }).First();
-
-                i_email.Value = i_comp.email;
-                i_email_usr.Value = i_comp.usuario;
-                i_email_clave.Value = i_comp.clave;
-                i_asunto.Value = i_comp.asunto;
-                i_smtp.Value = i_comp.servidor_smtp;
-                i_puerto.Value = i_comp.puerto.ToString();
-            }
-        }
-
         protected void btn_ee_Click(object sender, EventArgs e)
         {
             string i_email = Request.Form["i_email"];
@@ -5312,6 +5327,93 @@ namespace aw_im
             Mensaje("Datos actualizados con éxito");
         }
 
+        private void ctrl_config()
+        {
+            using (bd_imEntities m_comp = new bd_imEntities())
+            {
+                var i_comp = (from i_i in m_comp.inf_email_env
+                              select new
+                              {
+                                  i_i.email,
+                                  i_i.usuario,
+                                  i_i.clave,
+                                  i_i.asunto,
+                                  i_i.servidor_smtp,
+                                  i_i.puerto,
+                              }).First();
+
+                i_email.Value = i_comp.email;
+                i_email_usr.Value = i_comp.usuario;
+                i_email_clave.Value = i_comp.clave;
+                i_asunto.Value = i_comp.asunto;
+                i_smtp.Value = i_comp.servidor_smtp;
+                i_puerto.Value = i_comp.puerto.ToString();
+            }
+        }
+
         #endregion configuración de envío
+
+        #region rpt_ventas
+        private void defual_rpt(Guid vnta_ID)
+        {
+
+            vnta_ID = (Guid)(Session["vntaf_ID"]);
+            DataSet ds00 = new DataSet();
+
+            using (bd_imEntities m_vnta = new bd_imEntities())
+            {
+                var i_vnta = (from t_clte in m_vnta.fn_tbl_remision(vnta_ID)
+                              select t_clte).ToList();
+
+                if (i_vnta.Count == 0)
+                {
+                }
+                else
+                {
+                    nombre_rpt = i_vnta[0].cod_vnta;
+                }
+            }
+
+            #region ds00
+
+            // Setup DataSet
+
+            SqlDataAdapter da00 = new SqlDataAdapter();
+            SqlCommand cmd00 = new SqlCommand(@"SELECT * FROM [bd_im].[dbo].[v_rpt_remision] WHERE [vnta_ID] IN ('" + vnta_ID + "')");
+            cmd00.CommandType = CommandType.Text;
+            cmd00.Connection = new SqlConnection(cn.cn_SQL);
+            da00.SelectCommand = cmd00;
+
+            da00.Fill(ds00, "DataSet1");
+
+            ReportDataSource rds00 = new ReportDataSource("DataSet1", ds00.Tables[0]);
+
+            #endregion ds00
+
+            Warning[] warnings;
+            string[] streamIds;
+            string mimeType = string.Empty;
+            string encoding = string.Empty;
+            string extension = string.Empty;
+
+            ReportViewer viewer = new ReportViewer();
+            viewer.ProcessingMode = ProcessingMode.Local;
+            viewer.LocalReport.ReportPath = Server.MapPath("~/reportes/remision.rdl"); ;
+            viewer.LocalReport.EnableHyperlinks = true;
+            viewer.LocalReport.DataSources.Add(rds00);
+
+            byte[] bytes = viewer.LocalReport.Render("PDF", null, out mimeType, out encoding, out extension, out streamIds, out warnings);
+
+            Response.Buffer = true;
+            Response.Clear();
+            Response.ContentType = mimeType;
+            Response.AddHeader("content-disposition", "attachment; filename=" + "" + nombre_rpt + "" + "." + extension);
+            Response.BinaryWrite(bytes); // create the file
+            Response.Flush(); // send it to the client to download
+
+       
+
+        }
+        #endregion
     }
 }

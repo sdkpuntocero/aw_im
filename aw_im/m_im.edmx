@@ -947,7 +947,7 @@ advertencia 6002: La tabla o vista 'bd_im.dbo.inf_sepomex' no tiene definida nin
               <RowType>
                 <Property Name="Tipo" Type="varchar" MaxLength="9" Nullable="false" />
                 <Property Name="d_count" Type="int" />
-                <Property Name="dd_sum" Type="float" />
+                <Property Name="dd_sum" Type="money" />
               </RowType>
             </CollectionType>
           </ReturnType>
@@ -1201,7 +1201,7 @@ advertencia 6002: La tabla o vista 'bd_im.dbo.inf_sepomex' no tiene definida nin
         <ComplexType Name="fn_totales_gerentesc_Result">
           <Property Name="Tipo" Type="String" MaxLength="9" FixedLength="false" Unicode="false" Nullable="false" />
           <Property Name="d_count" Type="Int32" />
-          <Property Name="dd_sum" Type="Double" />
+          <Property Name="dd_sum" Type="Decimal" Precision="19" Scale="4" />
         </ComplexType>
         <EntityType Name="fact_alergia">
           <Key>

@@ -11,9 +11,6 @@
     <title>\ Acceso</title>
 
     <link href="Content/bootstrap.min.css" rel="stylesheet" />
-    <link href="Content/fontawesome-free-5.7.0-web/css/all.css" rel="stylesheet" />
-
-    <link href="styles/style_liec.css" rel="stylesheet" />
 
     <script src="Scripts/jquery-3.3.1.min.js"></script>
 
@@ -123,23 +120,20 @@
             <div class="avatar">
 
                 <img class="img-responsive  img-thumbnail" src="img/im.png" width="128" />
-
             </div>
             <hr />
             <br />
-            
+
             <div class="form-group">
-                <input type="text" class="form-control" runat="server" id="i_usuario" required="required" placeholder="Ingrese a su cuenta" tabindex="1" />
-            
+                <input type="text" class="form-control" runat="server" id="i_usuario" required="required" autocomplete="on" placeholder="Ingrese a su cuenta" tabindex="1" />
             </div>
             <br />
-    
+
             <div class="form-group">
-                <input type="password" class="form-control" runat="server" id="i_clave" required="required" placeholder="Contraseña" tabindex="1" />
-            <br />
-            
+                <input type="password" class="form-control" runat="server" id="i_clave" required="required" autocomplete="off" placeholder="Contraseña" tabindex="1" />
+                <br />
             </div>
-            
+
             <div class="form-group text-right">
                 <asp:LinkButton ID="lkb_registro_inicial" runat="server" CssClass="text-info" TabIndex="4" Visible="false" Text="Registro Inicial" OnClick="lkb_registro_inicial_Click">
                 </asp:LinkButton>

@@ -733,6 +733,24 @@ namespace aw_im {
         protected global::System.Web.UI.UpdateProgress prgLoadingStatus;
         
         /// <summary>
+        /// Control div_rpt.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl div_rpt;
+        
+        /// <summary>
+        /// Control ReportViewer1.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::Microsoft.Reporting.WebForms.ReportViewer ReportViewer1;
+        
+        /// <summary>
         /// Control up_compras.
         /// </summary>
         /// <remarks>
@@ -839,15 +857,6 @@ namespace aw_im {
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlTextArea i_comp_desc;
-        
-        /// <summary>
-        /// Control i_comp_caract.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlTextArea i_comp_caract;
         
         /// <summary>
         /// Control btn_comp_guardar.
@@ -1928,6 +1937,15 @@ namespace aw_im {
         /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button btn_ee;
+        
+        /// <summary>
+        /// Control up_rpt.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.UpdatePanel up_rpt;
         
         /// <summary>
         /// Control up_template.

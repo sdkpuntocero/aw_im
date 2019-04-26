@@ -1,5 +1,6 @@
 ﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="pnl_control.aspx.cs" Inherits="aw_im.pnl_control" %>
 
+<%@ Register Assembly="Microsoft.ReportViewer.WebForms" Namespace="Microsoft.Reporting.WebForms" TagPrefix="rsweb" %>
 <!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml" lang="es-mx">
@@ -27,7 +28,7 @@
                     <div class="row">
 
                         <div class="col-md-4" style="">
-                            <img class="img-fluid d-block float-left img-thumbnail" src="img/nophoto.svg" width="128" height="128">
+                            <img class="img-fluid d-block float-left img-thumbnail" src="img/im.png" width="128" height="128">
                         </div>
 
                         <div class="col-md-8 text-right" style="">
@@ -226,31 +227,26 @@
                                 <asp:UpdatePanel ID="up_resumen" runat="server" UpdateMode="Conditional">
                                     <ContentTemplate>
                                         <div class="card" runat="server" id="card_resumen">
-                                            <div class="card-header">Resumen en Construcción </div>
+                                            <div class="card-header">Resumen</div>
                                             <div class="card-body">
                                                 <div class="row">
-                                                    <div class="col-md-3 text-center"">
+                                                    <div class="col-md-3 text-center">
                                                         <h6 class="text-danger">Clientes  <i class="fas fa-briefcase text-danger fa-lg"></i></h6>
-                                                      <asp:LinkButton ID="LinkButton1" runat="server" Text="" ></asp:LinkButton>
-                                                   
+                                                        <asp:LinkButton ID="LinkButton1" runat="server" Text=""></asp:LinkButton>
                                                     </div>
-                                                    <div class="col-md-3 text-center"">
+                                                    <div class="col-md-3 text-center">
                                                         <h6 class="text-danger">Ventas <i class="fas fa-shopping-basket text-danger fa-lg"></i></h6>
-                                                      <asp:LinkButton ID="LinkButton2" runat="server" Text="" ></asp:LinkButton>
-                                                  
+                                                        <asp:LinkButton ID="LinkButton2" runat="server" Text=""></asp:LinkButton>
                                                     </div>
-                                                    <div class="col-md-3 text-center"">
+                                                    <div class="col-md-3 text-center">
                                                         <h6 class="text-danger">Compras   <i class="fas fa-shopping-cart text-danger fa-lg"></i></h6>
-                                                      <asp:LinkButton ID="LinkButton3" runat="server" Text="" ></asp:LinkButton>
-                                                  
+                                                        <asp:LinkButton ID="LinkButton3" runat="server" Text=""></asp:LinkButton>
                                                     </div>
                                                     <div class="col-md-3 text-center">
                                                         <h6 class="text-danger">Balance <i class="fa fa-list  fa-lg text-danger"></i></h6>
-                                                      <asp:LinkButton ID="LinkButton4" runat="server" Text="" ></asp:LinkButton>
-                                                    
+                                                        <asp:LinkButton ID="LinkButton4" runat="server" Text=""></asp:LinkButton>
                                                     </div>
                                                 </div>
-
                                             </div>
                                         </div>
                                     </ContentTemplate>
@@ -326,7 +322,6 @@
                                                                 <input type="text" class="form-control" runat="server" id="i_vnta_amaternoc" required="required" placeholder="*Apellido Materno" tabindex="10" />
                                                             </div>
                                                         </div>
-
                                                     </div>
                                                     <div runat="server" id="div_i_vnta_binv" visible="true">
                                                         <div class="input-group mb-3">
@@ -359,7 +354,6 @@
                                                                         <asp:TemplateField HeaderText="CANTIDAD">
                                                                             <ItemTemplate>
                                                                                 <asp:TextBox CssClass="text-center" ID="i_vnta_invcant" runat="server" TextMode="Number" TabIndex="12" Width="70" required="required"></asp:TextBox>
-
                                                                             </ItemTemplate>
                                                                         </asp:TemplateField>
                                                                         <asp:TemplateField HeaderText="DESC %">
@@ -460,7 +454,6 @@
                                                         </div>
                                                     </div>
 
-
                                                     <asp:Button CssClass="btn btn-danger" ID="btn_vnta" runat="server" Text="Generar Venta" TabIndex="14" OnClick="btn_vnta_Click" />
 
                                                     <div runat="server" id="div_progreso" visible="true" class="text-right">
@@ -476,16 +469,28 @@
                                                             </ProgressTemplate>
                                                         </asp:UpdateProgress>
                                                     </div>
+                                                    <div class="row">
+
+                                                        <div class="row" id="div_rpt" runat="server" visible="false">
+                                                            <div class="col-lg-1 ">
+                                                            </div>
+                                                            <div class="col-lg-8 text-center">
+                                                                <rsweb:ReportViewer ID="ReportViewer1" runat="server" Font-Names="Verdana" Font-Size="8pt" Height="800px" waitmessagefont-names="Verdana" waitmessagefont-size="14pt" Width="800px" ShowBackButton="False" ShowFindControls="False" ShowPageNavigationControls="False" AsyncRendering="true" interactivedeviceinfos="(Collection)">
+                                                                </rsweb:ReportViewer>
+                                                            </div>
+                                                            <div class="col-lg-1 ">
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </ContentTemplate>
                                     <Triggers>
                                         <asp:AsyncPostBackTrigger ControlID="btn_vnta" EventName="Click" />
+                                    
                                     </Triggers>
                                 </asp:UpdatePanel>
-
-
                                 <asp:UpdatePanel ID="up_compras" runat="server" UpdateMode="Conditional">
                                     <ContentTemplate>
                                         <div class="card" runat="server" id="card_compras" visible="false">
@@ -520,7 +525,7 @@
                                                                 </asp:BoundField>
                                                                 <asp:BoundField DataField="cod_comp" HeaderText="ID" SortExpression="cod_comp" />
                                                                 <asp:BoundField DataField="categoria" HeaderText="CATEGORIA" SortExpression="categoria" Visible="true" />
-                                                                <asp:BoundField DataField="caracteristica" HeaderText="CARACTERISTICA" SortExpression="caracteristica" />
+                                                                <asp:BoundField DataField="comp_desc" HeaderText="DESCRIPCÍON" SortExpression="comp_desc" />
                                                                 <asp:TemplateField HeaderText="ESTATUS">
                                                                     <ItemTemplate>
                                                                         <asp:DropDownList ID="ddl_comp_estatus" runat="server" AutoPostBack="true">
@@ -569,14 +574,9 @@
                                                     </div>
 
                                                     <div class="row">
-                                                        <div class="col-md-6">
+                                                        <div class="col-md-12">
                                                             <div class="form-group">
                                                                 <textarea class="form-control" runat="server" id="i_comp_desc" required="required" placeholder="*Descripción" tabindex="9" />
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <div class="form-group">
-                                                                <textarea class="form-control" runat="server" id="i_comp_caract" required="required" placeholder="*Caracteristica" tabindex="10" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1376,6 +1376,12 @@
                                                 <asp:Button CssClass="btn btn-danger" ID="btn_ee" runat="server" Text="Guardar" TabIndex="7" Visible="true" OnClick="btn_ee_Click" />
                                             </div>
                                         </div>
+                                    </ContentTemplate>
+                                    <Triggers>
+                                    </Triggers>
+                                </asp:UpdatePanel>
+                                <asp:UpdatePanel ID="up_rpt" runat="server" UpdateMode="Conditional">
+                                    <ContentTemplate>
                                     </ContentTemplate>
                                     <Triggers>
                                     </Triggers>

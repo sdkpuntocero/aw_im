@@ -1,5 +1,7 @@
-﻿using System;
+﻿using aw_im.Properties;
+using System;
 using System.Linq;
+using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 
@@ -9,8 +11,8 @@ namespace aw_im
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            //try
-            //{
+            try
+            {
                 if (!IsPostBack)
                 {
                     inf_demp();
@@ -18,11 +20,11 @@ namespace aw_im
                 else
                 {
                 }
-            //}
-            //catch
-            //{
-            //    Response.Redirect("acceso.aspx");
-            //}
+            }
+            catch
+            {
+                Response.Redirect("acceso.aspx");
+            }
         }
 
         private void inf_demp()
@@ -53,7 +55,7 @@ namespace aw_im
         protected void btn_acceso_Click(object sender, EventArgs e)
         {
             string user, pass, pass_qa;
-            int cod_area;
+            int cod_perf;
             Guid usrf_ID;
 
             user = i_usuario.Value;
@@ -71,10 +73,10 @@ namespace aw_im
                                  {
                                      i_u.usuario_ID,
                                      i_u.clave,
-                                     i_uh.area_ID
+                                     i_uh.perfil_ID
                                  }).ToList();
 
-                    cod_area = i_usr[0].area_ID;
+                    cod_perf = i_usr[0].perfil_ID;
                     usrf_ID = i_usr[0].usuario_ID;
                     pass_qa = i_usr[0].clave;
 
@@ -85,6 +87,8 @@ namespace aw_im
 
                         if (d_corp.Count == 0)
                         {
+                            //HttpCookie usr_cookie = new HttpCookie("usr_cookie", usrf_ID.ToString());
+                            //Response.Cookies.Add(usr_cookie);
                             Session["ss_idusr"] = usrf_ID;
 
                             Response.Redirect("pnl_corporativo.aspx");
@@ -93,56 +97,60 @@ namespace aw_im
                         {
                             if (i_usr.Count == 0)
                             {
-                                Mensaje("Usuario no existe, favor de reintentar");
+                                Mensaje("Usuario no existe, favor de re-intentar");
                             }
                             else
                             {
                                 if (pass == pass_qa)
                                 {
-                                    switch (cod_area)
+                                    //HttpCookie usr_cookie = new HttpCookie("usr_cookie", usrf_ID.ToString());
+                                    //Response.Cookies.Add(usr_cookie);
+                                    Session["ss_idusr"] = usrf_ID;
+                                    switch (cod_perf)
                                     {
                                         case 2:
-                                            Session["ss_idusr"] = usrf_ID;
-
+                                      
                                             Response.Redirect("pnl_control.aspx");
                                             break;
                                         case 3:
 
-                                            Session["ss_idusr"] = usrf_ID;
+                                       
 
                                             Response.Redirect("pnl_control.aspx");
                                             break;
 
                                         case 4:
-                                            Session["ss_idusr"] = usrf_ID;
-
+                                      
                                             Response.Redirect("pnl_control.aspx");
+
                                             break;
 
                                         case 5:
-                                            Session["ss_idusr"] = usrf_ID;
-
-                                            Response.Redirect("pnl_control.aspx");
+                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
                                             break;
 
                                         case 6:
-                                            Session["ss_idusr"] = usrf_ID;
-
-                                            Response.Redirect("pnl_cont.aspx");
+                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
                                             break;
 
                                         case 7:
 
-                                            Session["ss_idusr"] = usrf_ID;
-
-                                            Response.Redirect("pnl_capt.aspx");
+                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
                                             break;
 
-                                        case 13:
+                                        case 8:
 
-                                            Session["ss_idusr"] = usrf_ID;
+                                     
 
-                                            Response.Redirect("pnl_recursos_humanos.aspx");
+                                            Response.Redirect("pnl_control.aspx");
+                                            break;
+                                        case 9:
+
+                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
+                                            break;
+                                        case 10:
+
+                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
                                             break;
 
                                         default:
@@ -176,6 +184,24 @@ namespace aw_im
         protected void lkb_registro_inicial_Click(object sender, EventArgs e)
         {
             Response.Redirect("registro_inicial.aspx");
+        }
+
+        public void registrarSesion(HttpContext contexto, Guid usrf_ID)
+        {
+            TimeSpan TimeOut = new TimeSpan(0, 0, contexto.Session.Timeout, 0, 0);
+
+       
+
+            if (contexto.Cache[usrf_ID.ToString()] == null) //La sesion esta libre.
+                contexto.Cache.Insert(usrf_ID.ToString(),
+                contexto.Session.SessionID,
+                null,
+                DateTime.MaxValue,
+                TimeOut,
+                System.Web.Caching.CacheItemPriority.NotRemovable,
+                null);
+            contexto.Session["ss_idusr"] = usrf_ID;  //Guarda el nombre de usuario actual.
+
         }
     }
 }
