@@ -15,10 +15,10 @@ namespace aw_im
     using System.Data.Entity.Core.Objects;
     using System.Linq;
     
-    public partial class bd_imEntities : DbContext
+    public partial class db_imEntities : DbContext
     {
-        public bd_imEntities()
-            : base("name=bd_imEntities")
+        public db_imEntities()
+            : base("name=db_imEntities")
         {
         }
     
@@ -45,6 +45,7 @@ namespace aw_im
         public virtual DbSet<fact_licencia> fact_licencia { get; set; }
         public virtual DbSet<fact_nivel_escolar> fact_nivel_escolar { get; set; }
         public virtual DbSet<fact_perfil> fact_perfil { get; set; }
+        public virtual DbSet<fact_periodo> fact_periodo { get; set; }
         public virtual DbSet<fact_rfc_tipo> fact_rfc_tipo { get; set; }
         public virtual DbSet<fact_tipo_escolar> fact_tipo_escolar { get; set; }
         public virtual DbSet<inf_centro> inf_centro { get; set; }
@@ -68,24 +69,48 @@ namespace aw_im
         public virtual DbSet<inf_vnta_inv> inf_vnta_inv { get; set; }
         public virtual DbSet<inf_sepomex> inf_sepomex { get; set; }
     
-        [DbFunction("bd_imEntities", "fn_tbl_remision")]
+        [DbFunction("db_imEntities", "fn_tbl_remision")]
         public virtual IQueryable<fn_tbl_remision_Result> fn_tbl_remision(Nullable<System.Guid> vntaID_F)
         {
             var vntaID_FParameter = vntaID_F.HasValue ?
                 new ObjectParameter("vntaID_F", vntaID_F) :
                 new ObjectParameter("vntaID_F", typeof(System.Guid));
     
-            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fn_tbl_remision_Result>("[bd_imEntities].[fn_tbl_remision](@vntaID_F)", vntaID_FParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fn_tbl_remision_Result>("[db_imEntities].[fn_tbl_remision](@vntaID_F)", vntaID_FParameter);
         }
     
-        [DbFunction("bd_imEntities", "fn_totales_gerentesc")]
+        [DbFunction("db_imEntities", "fn_totales_gerentesc")]
         public virtual IQueryable<fn_totales_gerentesc_Result> fn_totales_gerentesc(Nullable<System.Guid> f_ID)
         {
             var f_IDParameter = f_ID.HasValue ?
                 new ObjectParameter("f_ID", f_ID) :
                 new ObjectParameter("f_ID", typeof(System.Guid));
     
-            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fn_totales_gerentesc_Result>("[bd_imEntities].[fn_totales_gerentesc](@f_ID)", f_IDParameter);
+            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fn_totales_gerentesc_Result>("[db_imEntities].[fn_totales_gerentesc](@f_ID)", f_IDParameter);
+        }
+    
+        [DbFunction("db_imEntities", "fnTotalesMesGerentes")]
+        public virtual IQueryable<fnTotalesMesGerentes_Result> fnTotalesMesGerentes(Nullable<System.Guid> f_ID, Nullable<int> f_mm, Nullable<int> f_yyyy)
+        {
+            var f_IDParameter = f_ID.HasValue ?
+                new ObjectParameter("f_ID", f_ID) :
+                new ObjectParameter("f_ID", typeof(System.Guid));
+    
+            var f_mmParameter = f_mm.HasValue ?
+                new ObjectParameter("f_mm", f_mm) :
+                new ObjectParameter("f_mm", typeof(int));
+    
+            var f_yyyyParameter = f_yyyy.HasValue ?
+                new ObjectParameter("f_yyyy", f_yyyy) :
+                new ObjectParameter("f_yyyy", typeof(int));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fnTotalesMesGerentes_Result>("[db_imEntities].[fnTotalesMesGerentes](@f_ID, @f_mm, @f_yyyy)", f_IDParameter, f_mmParameter, f_yyyyParameter);
+        }
+    
+        [DbFunction("db_imEntities", "fn_totales_direccionc")]
+        public virtual IQueryable<fn_totales_direccionc_Result> fn_totales_direccionc()
+        {
+            return ((IObjectContextAdapter)this).ObjectContext.CreateQuery<fn_totales_direccionc_Result>("[db_imEntities].[fn_totales_direccionc]()");
         }
     }
 }

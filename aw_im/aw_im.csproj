@@ -107,12 +107,15 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="estilos\estilos.css" />
     <Content Include="estilos\estilos_e.css" />
+    <Content Include="estilos\style.css" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="HtmlTemplate.html" />
+    <Content Include="img\ajax-loader.gif" />
     <Content Include="img\ico_ve.png" />
     <Content Include="img\im.png" />
     <Content Include="img\nophoto.svg" />
+    <Content Include="materiales.aspx" />
     <Content Include="m_im.Context.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <DependentUpon>m_im.edmx</DependentUpon>
@@ -125,6 +128,7 @@
     </Content>
     <Content Include="notificaciones.aspx" />
     <Content Include="pnl_control.aspx" />
+    <Content Include="recursos.aspx" />
     <Content Include="registro_inicial.aspx" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -138,6 +142,26 @@
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="estilos\estilos.scss" />
+    <Content Include="sidebar\bootstrap-3\index.html" />
+    <Content Include="sidebar\bootstrap-3\index2.html" />
+    <Content Include="sidebar\bootstrap-3\index3.html" />
+    <Content Include="sidebar\bootstrap-3\index4.html" />
+    <Content Include="sidebar\bootstrap-3\index5.html" />
+    <Content Include="sidebar\bootstrap-3\style.css" />
+    <Content Include="sidebar\bootstrap-3\style2.css" />
+    <Content Include="sidebar\bootstrap-3\style3.css" />
+    <Content Include="sidebar\bootstrap-3\style4.css" />
+    <Content Include="sidebar\bootstrap-3\style5.css" />
+    <Content Include="sidebar\index.html" />
+    <Content Include="sidebar\index2.html" />
+    <Content Include="sidebar\index3.html" />
+    <Content Include="sidebar\index4.html" />
+    <Content Include="sidebar\index5.html" />
+    <Content Include="sidebar\style.css" />
+    <Content Include="sidebar\style2.css" />
+    <Content Include="sidebar\style3.css" />
+    <Content Include="sidebar\style4.css" />
+    <Content Include="sidebar\style5.css" />
     <Content Include="SqlServerTypes\readme.htm" />
     <Content Include="SqlServerTypes\x64\msvcr120.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -159,6 +183,9 @@
     <Content Include="m_im.edmx.diagram">
       <DependentUpon>m_im.edmx</DependentUpon>
     </Content>
+    <Content Include="material\preescolar\DesarrolloDeHabilidades\PreescolarDesarrolloDeHabilidades1.pdf" />
+    <Content Include="material\recursos\librosdetexto\primergrado\1G_ExploracionDelaNaturalezaYLaSociedad.pdf" />
+    <Content Include="material\recursos\librosdetexto\primergrado\1GS_ExploracionDelaNaturalezaYLaSociedad.pdf" />
     <None Include="Properties\PublishProfiles\carpeta_local.pubxml" />
     <None Include="Properties\PublishProfiles\iis_dev.pubxml" />
     <None Include="Properties\PublishProfiles\online.pubxml" />
@@ -240,13 +267,22 @@
     <Compile Include="fact_perfil.cs">
       <DependentUpon>m_im.tt</DependentUpon>
     </Compile>
+    <Compile Include="fact_periodo.cs">
+      <DependentUpon>m_im.tt</DependentUpon>
+    </Compile>
     <Compile Include="fact_rfc_tipo.cs">
       <DependentUpon>m_im.tt</DependentUpon>
     </Compile>
     <Compile Include="fact_tipo_escolar.cs">
       <DependentUpon>m_im.tt</DependentUpon>
     </Compile>
+    <Compile Include="fnTotalesMesGerentes_Result.cs">
+      <DependentUpon>m_im.tt</DependentUpon>
+    </Compile>
     <Compile Include="fn_tbl_remision_Result.cs">
+      <DependentUpon>m_im.tt</DependentUpon>
+    </Compile>
+    <Compile Include="fn_totales_direccionc_Result.cs">
       <DependentUpon>m_im.tt</DependentUpon>
     </Compile>
     <Compile Include="fn_totales_gerentesc_Result.cs">
@@ -316,6 +352,13 @@
       <DependentUpon>m_im.tt</DependentUpon>
     </Compile>
     <Compile Include="left_right_mid.cs" />
+    <Compile Include="materiales.aspx.cs">
+      <DependentUpon>materiales.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="materiales.aspx.designer.cs">
+      <DependentUpon>materiales.aspx</DependentUpon>
+    </Compile>
     <Compile Include="m_im.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -351,6 +394,13 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="recursos.aspx.cs">
+      <DependentUpon>recursos.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="recursos.aspx.designer.cs">
+      <DependentUpon>recursos.aspx</DependentUpon>
+    </Compile>
     <Compile Include="registro_inicial.aspx.cs">
       <DependentUpon>registro_inicial.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -380,6 +430,11 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="material\recursos\librosdetexto\cuartogrado\" />
+    <Folder Include="material\recursos\librosdetexto\quintogrado\" />
+    <Folder Include="material\recursos\librosdetexto\segundogrado\" />
+    <Folder Include="material\recursos\librosdetexto\sextogrado\" />
+    <Folder Include="material\recursos\librosdetexto\tercergrado\" />
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>

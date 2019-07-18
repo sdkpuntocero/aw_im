@@ -1,3 +1,20 @@
-﻿.hideGridColumn {
+﻿:root {
+    --primary: #f9e683;
+    --secondary: #000947;
+    --light: #f3f3f3;
+    --dark: #151515;
+    --info: #ccc;
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+}
+
+.hideGridColumn {
     display: none;
+}
+.border-primary {
+    border-color: #f9e683 !important;
+}
+.bg-primary {
+    background-color: #f9e683 !important;
 }

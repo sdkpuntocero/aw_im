@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
-using System.Web.Security;
 using System.Web.Services;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -24,12 +23,7 @@ namespace aw_im
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (Session["ss_idusr"] == null)
-            {
-                FormsAuthentication.SignOut();
-                Response.Redirect("acceso.aspx");
-            }
-            else
+            try
             {
                 if (!IsPostBack)
                 {
@@ -42,34 +36,67 @@ namespace aw_im
                     {
                     }
                 }
-                else
-                {
-                }
+            }
+            catch
+            {
+                Response.Redirect("acceso.aspx");
             }
         }
 
         private void inf_totales()
         {
-            using (bd_imEntities m_usuario = new bd_imEntities())
+            try
             {
-                var i_usuario = (from i_u in m_usuario.fn_totales_gerentesc(empf_ID)
-                                 select i_u).ToList();
+                if (int_idperf == 2)
+                {
+                    using (db_imEntities m_usuario = new db_imEntities())
+                    {
+                        var i_usuario = (from i_u in m_usuario.fn_totales_direccionc()
+                                         select i_u).ToList();
 
-                string t_tipo_clte = i_usuario[0].Tipo;
-                string t_cout_clte = i_usuario[0].d_count.ToString();
-                string t_sum_clte = i_usuario[0].dd_sum.ToString();
-                string t_tipo_vnta = i_usuario[2].Tipo;
-                string t_cout_vnta = i_usuario[2].d_count.ToString();
-                string t_sum_vnta = i_usuario[2].dd_sum.ToString();
-                string t_tipo_comp = i_usuario[1].Tipo;
-                string t_cout_comp = i_usuario[1].d_count.ToString();
-                string t_sum_comp = i_usuario[1].dd_sum.ToString();
+                        string t_tipo_clte = i_usuario[0].Tipo;
+                        string t_cout_clte = i_usuario[0].d_count.ToString();
+                        string t_sum_clte = i_usuario[0].dd_sum.ToString();
+                        string t_tipo_vnta = i_usuario[2].Tipo;
+                        string t_cout_vnta = i_usuario[2].d_count.ToString();
+                        string t_sum_vnta = i_usuario[2].dd_sum.ToString();
+                        string t_tipo_comp = i_usuario[1].Tipo;
+                        string t_cout_comp = i_usuario[1].d_count.ToString();
+                        string t_sum_comp = i_usuario[1].dd_sum.ToString();
 
-                LinkButton1.Text = t_cout_clte;
-                LinkButton2.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
-                LinkButton3.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
-                LinkButton4.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
+                        LinkButton1.Text = t_cout_clte;
+                        LinkButton2.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
+                        LinkButton3.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
+                        LinkButton4.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
+                    }
+                }
+                else
+                {
+                    using (db_imEntities m_usuario = new db_imEntities())
+                    {
+                        empf_ID = (Guid)(Session["ss_idcnt"]);
+                        var i_usuario = (from i_u in m_usuario.fn_totales_gerentesc(empf_ID)
+                                         select i_u).ToList();
+
+                        string t_tipo_clte = i_usuario[0].Tipo;
+                        string t_cout_clte = i_usuario[0].d_count.ToString();
+                        string t_sum_clte = i_usuario[0].dd_sum.ToString();
+                        string t_tipo_vnta = i_usuario[2].Tipo;
+                        string t_cout_vnta = i_usuario[2].d_count.ToString();
+                        string t_sum_vnta = i_usuario[2].dd_sum.ToString();
+                        string t_tipo_comp = i_usuario[1].Tipo;
+                        string t_cout_comp = i_usuario[1].d_count.ToString();
+                        string t_sum_comp = i_usuario[1].dd_sum.ToString();
+
+                        LinkButton1.Text = t_cout_clte;
+                        LinkButton2.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
+                        LinkButton3.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
+                        LinkButton4.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
+                    }
+                }
             }
+            catch
+            { }
         }
 
         private void inf_usr_oper()
@@ -77,7 +104,7 @@ namespace aw_im
             //usr_ID = Guid.Parse(Request.Cookies[1].Value);
             usr_ID = (Guid)(Session["ss_idusr"]);
 
-            using (bd_imEntities m_usuario = new bd_imEntities())
+            using (db_imEntities m_usuario = new db_imEntities())
             {
                 var i_usuario = (from i_u in m_usuario.inf_usuario
                                  join i_up in m_usuario.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
@@ -112,6 +139,22 @@ namespace aw_im
 
                     case 2:
 
+                        CentrosFiltro.Items.Clear();
+
+                        using (db_imEntities m_ss = new db_imEntities())
+                        {
+                            var i_ma = (from c in m_ss.inf_centro
+                                        select c).OrderBy(x => x.cod_centro).ToList();
+
+                            CentrosFiltro.DataSource = i_ma;
+                            CentrosFiltro.DataTextField = "centro_nom";
+                            CentrosFiltro.DataValueField = "centro_ID";
+                            CentrosFiltro.DataBind();
+
+                            CentrosFiltro.Items.Insert(0, new ListItem("*Centro", string.Empty));
+                        }
+
+                        CentrosFiltro.Visible = true;
                         break;
 
                     case 3:
@@ -123,6 +166,7 @@ namespace aw_im
                         li_cnt.Visible = false;
                         li_config.Visible = false;
                         li_inv.Visible = false;
+
                         break;
 
                     case 5:
@@ -132,6 +176,7 @@ namespace aw_im
                         li_cnt.Visible = false;
                         li_config.Visible = false;
                         li_inv.Visible = false;
+
                         break;
 
                     case 6:
@@ -141,6 +186,7 @@ namespace aw_im
                         li_cnt.Visible = false;
                         li_config.Visible = false;
                         li_inv.Visible = false;
+
                         break;
 
                     case 8:
@@ -148,6 +194,24 @@ namespace aw_im
                         li_cnt.Visible = false;
                         li_config.Visible = false;
                         li_inv.Visible = false;
+
+                        break;
+
+                    case 9:
+
+                        li_resumen.Visible = false;
+                        li_vnta.Visible = false;
+                        li_cnt.Visible = false;
+                        li_config.Visible = false;
+
+                        break;
+
+                    case 10:
+                        li_resumen.Visible = false;
+                        li_vnta.Visible = false;
+                        li_cnt.Visible = false;
+                        li_config.Visible = false;
+
                         break;
 
                     default:
@@ -168,8 +232,9 @@ namespace aw_im
             string i_cp = Request.Form["iemp_cp"];
             string i_colonia = Request.Form["iemp_colonia"];
 
-            using (var m_emp = new bd_imEntities())
+            using (var m_emp = new db_imEntities())
             {
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 var d_emp = (from c in m_emp.inf_centro
                              where c.centro_ID == empf_ID
                              select c).FirstOrDefault();
@@ -191,7 +256,7 @@ namespace aw_im
         {
             string str_cp = iemp_cp.Value;
 
-            using (bd_imEntities db_sepomex = new bd_imEntities())
+            using (db_imEntities db_sepomex = new db_imEntities())
             {
                 var tbl_sepomex = (from c in db_sepomex.inf_sepomex
                                    where c.d_codigo == str_cp
@@ -247,8 +312,9 @@ namespace aw_im
 
         private void inf_fc()
         {
-            using (bd_imEntities m_emp = new bd_imEntities())
+            using (db_imEntities m_emp = new db_imEntities())
             {
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 var i_usuariof = (from i_u in m_emp.inf_usuario
                                   join i_uh in m_emp.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
                                   where i_uh.usuario_ID == usr_ID
@@ -341,6 +407,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_centros_Click(object sender, EventArgs e)
@@ -376,6 +445,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_clte_Click(object sender, EventArgs e)
@@ -412,6 +484,14 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
+        }
+
+        protected void lkb_servicios_Click(object sender, EventArgs e)
+        {
+            inf_servicios();
         }
 
         protected void lkb_ctrl_compras_Click(object sender, EventArgs e)
@@ -448,6 +528,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_inv_Click(object sender, EventArgs e)
@@ -484,6 +567,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_prov_Click(object sender, EventArgs e)
@@ -520,6 +606,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_usrs_Click(object sender, EventArgs e)
@@ -556,6 +645,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_ctrl_vnta_Click(object sender, EventArgs e)
@@ -592,6 +684,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_resumen_Click(object sender, EventArgs e)
@@ -619,6 +714,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
             inf_totales();
         }
 
@@ -655,6 +753,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         protected void lkb_usr_fc_Click(object sender, EventArgs e)
@@ -685,6 +786,9 @@ namespace aw_im
             up_centros.Update();
             up_usr.Update();
             up_configuracion.Update();
+
+            card_servicios.Visible = false;
+            up_servicios.Update();
         }
 
         #endregion ctrl_menu_navegación
@@ -700,7 +804,7 @@ namespace aw_im
             str_clave = encrypta.Encrypt(Request.Form["i_clavef"]);
             cod_usr = Request.Form["i_f_bf"];
 
-            using (var m_usr = new bd_imEntities())
+            using (var m_usr = new db_imEntities())
             {
                 var d_usrp = (from c in m_usr.inf_usr_personales
                               where c.usuario_ID == usr_ID
@@ -725,7 +829,7 @@ namespace aw_im
 
         private void inf_usrf()
         {
-            using (bd_imEntities m_usrf = new bd_imEntities())
+            using (db_imEntities m_usrf = new db_imEntities())
             {
                 var d_usrf = (from i_u in m_usrf.inf_usuario
                               join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
@@ -757,7 +861,7 @@ namespace aw_im
             List<String> columnData = new List<String>();
             string d_f = prefixText.ToUpper();
 
-            using (bd_imEntities m_df = new bd_imEntities())
+            using (db_imEntities m_df = new db_imEntities())
             {
                 var i_df = (from i_u in m_df.inf_clte
 
@@ -784,21 +888,25 @@ namespace aw_im
             List<String> columnData = new List<String>();
             string d_f = prefixText.ToUpper();
 
-            using (bd_imEntities m_df = new bd_imEntities())
+            using (db_imEntities m_df = new db_imEntities())
             {
                 var i_df = (from i_u in m_df.inf_inv
-
-                            where i_u.caracteristica.Contains(d_f)
+                            join i_ge in m_df.fact_grado_escolar on i_u.grado_escolar_ID equals i_ge.grado_escolar_ID
+                            join i_ne in m_df.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                            where i_u.categoria.Contains(d_f)
 
                             select new
                             {
-                                i_u.caracteristica,
+                                i_ne.nivel_escolar_desc,
+                                i_ge.grado_escolar_desc,
+                                i_u.categoria,
+                                i_u.costo,
                                 i_u.cod_inv,
                             }).ToList();
 
                 foreach (var ff_d in i_df)
                 {
-                    columnData.Add(ff_d.caracteristica + " | " + ff_d.cod_inv);
+                    columnData.Add(ff_d.nivel_escolar_desc + " | " + ff_d.grado_escolar_desc + " | " + ff_d.categoria + " | " + String.Format("{0:C}", ff_d.costo) + " | " + ff_d.cod_inv);
                 }
             }
 
@@ -813,14 +921,16 @@ namespace aw_im
 
             if (str_pnlID == "pnl_usr")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     if (int_idperf <= 3)
                     {
                         var i_df = (from i_u in m_df.inf_usuario
                                     join i_up in m_df.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                    join i_urh in m_df.inf_usr_rh on i_u.usuario_ID equals i_urh.usuario_ID
                                     where i_up.nombres.Contains(d_f)
                                     where i_u.usuario_ID != usr_ID
+                                    where i_urh.perfil_ID != 7
                                     select new
                                     {
                                         nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
@@ -836,9 +946,11 @@ namespace aw_im
                     {
                         var i_df = (from i_u in m_df.inf_usuario
                                     join i_up in m_df.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                    join i_urh in m_df.inf_usr_rh on i_u.usuario_ID equals i_urh.usuario_ID
                                     where i_up.nombres.Contains(d_f)
                                     where i_u.usuario_ID != usr_ID
                                     where i_u.centro_ID == empf_ID
+                                    where i_urh.perfil_ID != 7
                                     select new
                                     {
                                         nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
@@ -854,7 +966,7 @@ namespace aw_im
             }
             else if (str_pnlID == "pnl_cnt")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     var i_df = (from i_u in m_df.inf_centro
                                 where i_u.centro_tipo_ID == 2
@@ -874,27 +986,30 @@ namespace aw_im
             }
             else if (str_pnlID == "pnl_inv")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     var i_df = (from i_u in m_df.inf_inv
-
-                                where i_u.caracteristica.Contains(d_f)
+                                join i_ge in m_df.fact_grado_escolar on i_u.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                join i_ne in m_df.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                where i_u.categoria.Contains(d_f)
 
                                 select new
                                 {
-                                    i_u.caracteristica,
+                                    i_ne.nivel_escolar_desc,
+                                    i_ge.grado_escolar_desc,
+                                    i_u.categoria,
                                     i_u.cod_inv,
                                 }).ToList();
 
                     foreach (var ff_d in i_df)
                     {
-                        columnData.Add(ff_d.caracteristica + " | " + ff_d.cod_inv);
+                        columnData.Add(ff_d.nivel_escolar_desc + " | " + ff_d.grado_escolar_desc + " | " + ff_d.categoria + " | " + ff_d.cod_inv);
                     }
                 }
             }
             else if (str_pnlID == "pnl_comp")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     if (int_idperf <= 3)
                     {
@@ -934,7 +1049,7 @@ namespace aw_im
             }
             else if (str_pnlID == "pnl_prov")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     if (int_idperf <= 3)
                     {
@@ -974,7 +1089,7 @@ namespace aw_im
             }
             else if (str_pnlID == "pnl_clte")
             {
-                using (bd_imEntities m_df = new bd_imEntities())
+                using (db_imEntities m_df = new db_imEntities())
                 {
                     if (int_idperf <= 3)
                     {
@@ -1045,6 +1160,120 @@ namespace aw_im
 
         #endregion funciones
 
+        #region ctrl_servicios
+
+        private void inf_servicios()
+        {
+            using (db_imEntities md_fb = new db_imEntities())
+            {
+                var i_f_b = (from i_i in md_fb.inf_inv
+                             join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                             join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                             join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                             select new
+                             {
+                                 i_i.inventario_ID,
+                                 i_i.cod_inv,
+                                 i_ei.est_inv_desc,
+                                 i_ge.grado_escolar_desc,
+                                 i_ne.nivel_escolar_desc,
+                                 i_i.categoria,
+                                 i_i.caracteristica,
+                                 i_i.registro,
+                                 i_i.costo
+                             }).ToList();
+
+                if (i_f_b.Count == 0)
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+
+                    Mensaje("Inventario no encontrado.");
+                }
+                else
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+                }
+            }
+
+            card_usrf.Visible = false;
+            card_empf.Visible = false;
+            card_resumen.Visible = false;
+            card_servicios.Visible = true;
+            card_ventas.Visible = false;
+            card_compras.Visible = false;
+            card_inventario.Visible = false;
+            card_proveedores.Visible = false;
+            card_clientes.Visible = false;
+            card_centros.Visible = false;
+            card_usr.Visible = false;
+            card_configuracion.Visible = false;
+
+            up_usrf.Update();
+            up_empf.Update();
+            up_resumen.Update();
+            up_servicios.Update();
+            up_ventas.Update();
+            up_compras.Update();
+            up_inventario.Update();
+            up_proveedores.Update();
+            up_clientes.Update();
+            up_centros.Update();
+            up_usr.Update();
+            up_configuracion.Update();
+        }
+
+        protected void gv_serv_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gv_serv.PageIndex = e.NewPageIndex;
+
+            using (db_imEntities md_fb = new db_imEntities())
+            {
+                var i_f_b = (from i_i in md_fb.inf_inv
+                             join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                             join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                             join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                             select new
+                             {
+                                 i_i.inventario_ID,
+                                 i_i.cod_inv,
+                                 i_ei.est_inv_desc,
+                                 i_ge.grado_escolar_desc,
+                                 i_ne.nivel_escolar_desc,
+                                 i_i.categoria,
+                                 i_i.caracteristica,
+                                 i_i.registro,
+                                 i_i.costo
+                             }).ToList();
+
+                if (i_f_b.Count == 0)
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+
+                    Mensaje("Inventario no encontrado.");
+                }
+                else
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+                }
+            }
+        }
+
+        #endregion ctrl_servicios
+
         #region ctrl_venta
 
         protected void btn_vnta_Click(object sender, EventArgs e)
@@ -1063,7 +1292,7 @@ namespace aw_im
                     Guid guid_vnta_clte;
                     string cod_usrf;
 
-                    using (bd_imEntities m_usr = new bd_imEntities())
+                    using (db_imEntities m_usr = new db_imEntities())
                     {
                         var i_clte = (from i_i in m_usr.inf_clte
                                       where i_i.cod_clte == d_vnta_clte
@@ -1226,7 +1455,7 @@ namespace aw_im
                 vnta_cant = string.Format("{0:N2}", int.Parse(txt_cant.Text));
                 vnta_desc = string.Format("{0:P0}", decimal.Parse(txt_desc.Text) / 100);
 
-                using (bd_imEntities m_usrf = new bd_imEntities())
+                using (db_imEntities m_usrf = new db_imEntities())
                 {
                     var i_f_b = (from i_i in m_usrf.inf_inv
                                  join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
@@ -1260,7 +1489,10 @@ namespace aw_im
                     }
 
                     tbl_vnta_inv.Rows.Add(i_f_b[0].inventario_ID, i_f_b[0].cod_inv, i_f_b[0].nivel_escolar_desc, i_f_b[0].grado_escolar_desc, i_f_b[0].categoria, i_f_b[0].caracteristica, string.Format("{0:C2}", i_f_b[0].costo), vnta_cant, vnta_desc, i_f_b[0].registro);
-
+                    if (tbl_vnta_inv.Columns.Count > 0)
+                    {
+                        btn_vnta.Enabled = true;
+                    }
                     gv_inv_vnta.Visible = false;
 
                     if (i_f_b.Count == 0)
@@ -1313,14 +1545,12 @@ namespace aw_im
             div_i_vnta.Visible = true;
             string vnta_cant = string.Empty;
             string vnta_desc = string.Empty;
-            GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
 
-            vnta_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
             if (e.CommandName == "btn_inv_vnta")
             {
-                //try
-                //{
-                using (bd_imEntities m_usrf = new bd_imEntities())
+                GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
+                vnta_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
+                using (db_imEntities m_usrf = new db_imEntities())
                 {
                     var i_f_b = (from i_i in m_usrf.inf_vnta
                                      //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
@@ -1362,12 +1592,13 @@ namespace aw_im
             else if (e.CommandName == "btn_up_vnta")
             {
                 int int_ddl = 0;
-
+                GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
+                vnta_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
                 DropDownList dl = (DropDownList)gvr.FindControl("ddl_vnta_estatus");
 
                 int_ddl = int.Parse(dl.SelectedValue);
 
-                using (var m_inv = new bd_imEntities())
+                using (var m_inv = new db_imEntities())
                 {
                     var i_inv = (from c in m_inv.inf_vnta
                                  where c.vnta_ID == vnta_f
@@ -1391,7 +1622,7 @@ namespace aw_im
                 Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_id;
 
-                using (bd_imEntities m_est = new bd_imEntities())
+                using (db_imEntities m_est = new db_imEntities())
                 {
                     var i_est = (from md_usr in m_est.inf_vnta
                                  where md_usr.vnta_ID == f_ID
@@ -1418,8 +1649,97 @@ namespace aw_im
             }
         }
 
+        protected void gv_vntaff_PageIndexChanging(object sender, GridViewPageEventArgs e)
+        {
+            gv_vntaff.PageIndex = e.NewPageIndex;
+            string f_busqueda = string.Empty;
+            if (string.IsNullOrEmpty(i_vnta_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
+
+                    using (db_imEntities m_usrf = new db_imEntities())
+                    {
+                        if (int_idperf <= 3)
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_vnta
+                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                                         select new
+                                         {
+                                             i_i.vnta_ID,
+                                             orden = i_i.cod_vnta.Replace("VNTA", ""),
+                                             i_i.cod_vnta,
+                                             i_i.est_vnta_ID,
+                                             i_i.centro_ID,
+                                             i_i.usuario_ID,
+                                             i_i.registro,
+                                         }).OrderBy(x => x.orden).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+
+                                Mensaje("Venta no encontrado.");
+                            }
+                            else
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+                            }
+                        }
+                        else
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_vnta
+                                             //join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                             //join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                             //join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                         where i_i.centro_ID == empf_ID
+                                         select new
+                                         {
+                                             i_i.vnta_ID,
+                                             orden = i_i.cod_vnta.Replace("VNTA", ""),
+                                             i_i.cod_vnta,
+                                             i_i.est_vnta_ID,
+                                             i_i.centro_ID,
+                                             i_i.usuario_ID,
+                                             i_i.registro,
+                                         }).OrderBy(x => x.orden).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+
+                                Mensaje("Venta no encontrado.");
+                            }
+                            else
+                            {
+                                gv_vntaff.DataSource = i_f_b;
+                                gv_vntaff.DataBind();
+                                gv_vntaff.Visible = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         protected void lkb_vnta_agregar_Click(object sender, EventArgs e)
         {
+            div_i_vnta_binv.Visible = true;
+            btn_vnta.Enabled = false;
             Session["vntaf_ID"] = Guid.Empty;
             est_vnta = 1;
             gv_inv_vnta.Visible = false;
@@ -1454,7 +1774,7 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_vnta_buscar"].ToString().ToUpper().Trim();
 
-                    using (bd_imEntities m_usrf = new bd_imEntities())
+                    using (db_imEntities m_usrf = new db_imEntities())
                     {
                         if (int_idperf <= 3)
                         {
@@ -1466,12 +1786,13 @@ namespace aw_im
                                          select new
                                          {
                                              i_i.vnta_ID,
+                                             orden = i_i.cod_vnta.Replace("VNTA", ""),
                                              i_i.cod_vnta,
                                              i_i.est_vnta_ID,
                                              i_i.centro_ID,
                                              i_i.usuario_ID,
                                              i_i.registro,
-                                         }).ToList();
+                                         }).OrderBy(x => x.orden).ToList();
 
                             if (i_f_b.Count == 0)
                             {
@@ -1498,12 +1819,13 @@ namespace aw_im
                                          select new
                                          {
                                              i_i.vnta_ID,
+                                             orden = i_i.cod_vnta.Replace("VNTA", ""),
                                              i_i.cod_vnta,
                                              i_i.est_vnta_ID,
                                              i_i.centro_ID,
                                              i_i.usuario_ID,
                                              i_i.registro,
-                                         }).ToList();
+                                         }).OrderBy(x => x.orden).ToList();
 
                             if (i_f_b.Count == 0)
                             {
@@ -1542,7 +1864,7 @@ namespace aw_im
 
                 n_fv = de_rub[1].Trim();
 
-                using (bd_imEntities m_clte = new bd_imEntities())
+                using (db_imEntities m_clte = new db_imEntities())
                 {
                     var i_clte = (from i_i in m_clte.inf_clte
                                   join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
@@ -1590,9 +1912,9 @@ namespace aw_im
                 string d_rub = f_busqueda;
                 String[] de_rub = d_rub.Trim().Split(char_s);
 
-                n_fv = de_rub[1].Trim();
+                n_fv = de_rub[4].Trim();
 
-                using (bd_imEntities m_usrf = new bd_imEntities())
+                using (db_imEntities m_usrf = new db_imEntities())
                 {
                     var i_f_b = (from i_i in m_usrf.inf_inv
                                  join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
@@ -1688,6 +2010,259 @@ namespace aw_im
 
         protected void gv_comp_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
+            div_i_comp.Visible = false;
+            gv_comp.PageIndex = e.NewPageIndex;
+            string f_busqueda = string.Empty;
+
+            if (string.IsNullOrEmpty(i_comp_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_comp_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_comp_buscar"].ToString().ToUpper().Trim();
+                    if (string.IsNullOrEmpty(dtGastosMes.Value))
+                    {
+                        using (db_imEntities m_comp = new db_imEntities())
+                        {
+                            if (int_idperf <= 3)
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                            else
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.centro_ID == empf_ID
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        string dt_rf = dtGastosMes.Value;
+
+                        String[] de_rub = dt_rf.Trim().Split('-');
+
+                        int fyyyy = int.Parse(de_rub[0].Trim());
+                        int fmm = int.Parse(de_rub[1].Trim());
+
+                        using (db_imEntities m_comp = new db_imEntities())
+                        {
+                            if (int_idperf <= 3)
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.registro.Value.Year == fyyyy
+                                              where i_i.registro.Value.Month == fmm
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                            else
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.centro_ID == empf_ID
+                                              where i_i.registro.Value.Year == fyyyy
+                                              where i_i.registro.Value.Month == fmm
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        f_busqueda = Request.Form["i_comp_buscar"].ToString().ToUpper().Trim();
+                        string n_fv;
+
+                        Char char_s = '|';
+                        string d_rub = f_busqueda;
+                        String[] de_rub = d_rub.Trim().Split(char_s);
+
+                        n_fv = de_rub[1].Trim();
+
+                        using (db_imEntities m_comp = new db_imEntities())
+                        {
+                            if (int_idperf <= 3)
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.cod_comp == n_fv
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                            else
+                            {
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.cod_comp == n_fv
+                                              where i_i.centro_ID == empf_ID
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        ctrl_comp();
+                        div_i_comp.Visible = false;
+                        Mensaje("Compra no encontrada.");
+                    }
+                }
+            }
         }
 
         protected void gv_comp_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -1702,7 +2277,7 @@ namespace aw_im
 
                     comp_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
 
-                    using (bd_imEntities m_comp = new bd_imEntities())
+                    using (db_imEntities m_comp = new db_imEntities())
                     {
                         var i_comp = (from i_i in m_comp.inf_comp
                                       join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
@@ -1754,7 +2329,7 @@ namespace aw_im
                 Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_id;
 
-                using (bd_imEntities m_est = new bd_imEntities())
+                using (db_imEntities m_est = new db_imEntities())
                 {
                     var i_est = (from md_usr in m_est.inf_comp
                                  where md_usr.compra_ID == f_ID
@@ -1804,70 +2379,152 @@ namespace aw_im
                 if (f_busqueda == "TODO")
                 {
                     f_busqueda = Request.Form["i_comp_buscar"].ToString().ToUpper().Trim();
-
-                    using (bd_imEntities m_comp = new bd_imEntities())
+                    if (string.IsNullOrEmpty(dtGastosMes.Value))
                     {
-                        if (int_idperf <= 3)
+                        using (db_imEntities m_comp = new db_imEntities())
                         {
-                            var i_comp = (from i_i in m_comp.inf_comp
-                                          join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
-                                          select new
-                                          {
-                                              i_i.compra_ID,
-                                              i_i.cod_comp,
-                                              i_ei.est_comp_desc,
-                                              i_i.categoria,
-                                              i_i.comp_desc,
-                                              i_i.registro,
-                                          }).ToList();
-
-                            if (i_comp.Count == 0)
+                            if (int_idperf <= 3)
                             {
-                                gv_comp.DataSource = i_comp;
-                                gv_comp.DataBind();
-                                gv_comp.Visible = true;
-                                gv_comp.Visible = true;
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
 
-                                Mensaje("Compra no encontrada.");
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
                             }
                             else
                             {
-                                gv_comp.DataSource = i_comp;
-                                gv_comp.DataBind();
-                                gv_comp.Visible = true;
-                                gv_comp.Visible = true;
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.centro_ID == empf_ID
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        string dt_rf = dtGastosMes.Value;
+
+                        String[] de_rub = dt_rf.Trim().Split('-');
+
+                        int fyyyy = int.Parse(de_rub[0].Trim());
+                        int fmm = int.Parse(de_rub[1].Trim());
+
+                        using (db_imEntities m_comp = new db_imEntities())
                         {
-                            var i_comp = (from i_i in m_comp.inf_comp
-                                          join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
-                                          where i_i.centro_ID == empf_ID
-                                          select new
-                                          {
-                                              i_i.compra_ID,
-                                              i_i.cod_comp,
-                                              i_ei.est_comp_desc,
-                                              i_i.categoria,
-                                              i_i.comp_desc,
-                                              i_i.registro,
-                                          }).ToList();
-
-                            if (i_comp.Count == 0)
+                            if (int_idperf <= 3)
                             {
-                                gv_comp.DataSource = i_comp;
-                                gv_comp.DataBind();
-                                gv_comp.Visible = true;
-                                gv_comp.Visible = true;
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.registro.Value.Year == fyyyy
+                                              where i_i.registro.Value.Month == fmm
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
 
-                                Mensaje("Compra no encontrada.");
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
                             }
                             else
                             {
-                                gv_comp.DataSource = i_comp;
-                                gv_comp.DataBind();
-                                gv_comp.Visible = true;
-                                gv_comp.Visible = true;
+                                var i_comp = (from i_i in m_comp.inf_comp
+                                              join i_ei in m_comp.fact_est_comp on i_i.est_comp_ID equals i_ei.est_comp_ID
+                                              where i_i.centro_ID == empf_ID
+                                              where i_i.registro.Value.Year == fyyyy
+                                              where i_i.registro.Value.Month == fmm
+                                              select new
+                                              {
+                                                  i_i.compra_ID,
+                                                  i_i.cod_comp,
+                                                  i_ei.est_comp_desc,
+                                                  i_i.categoria,
+                                                  i_i.comp_desc,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_comp.Count == 0)
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+
+                                    Mensaje("Compra no encontrada.");
+                                }
+                                else
+                                {
+                                    gv_comp.DataSource = i_comp;
+                                    gv_comp.DataBind();
+                                    gv_comp.Visible = true;
+                                    gv_comp.Visible = true;
+                                }
                             }
                         }
                     }
@@ -1885,7 +2542,7 @@ namespace aw_im
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_comp = new bd_imEntities())
+                        using (db_imEntities m_comp = new db_imEntities())
                         {
                             if (int_idperf <= 3)
                             {
@@ -1988,7 +2645,7 @@ namespace aw_im
                 }
             }
 
-            using (var m_inv = new bd_imEntities())
+            using (var m_inv = new db_imEntities())
             {
                 var i_inv = (from c in m_inv.inf_comp
                              where c.compra_ID == comp_f
@@ -2013,7 +2670,7 @@ namespace aw_im
             Guid guid_inv = Guid.NewGuid();
             string cod_usrf;
 
-            using (bd_imEntities m_usr = new bd_imEntities())
+            using (db_imEntities m_usr = new db_imEntities())
             {
                 var i_f_b = (from c in m_usr.inf_comp
                              select c).ToList();
@@ -2032,6 +2689,11 @@ namespace aw_im
                               where c.comp_desc == d_comp_desc
 
                               select c).ToList();
+
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
 
                 if (i_f_bf.Count == 0)
                 {
@@ -2096,6 +2758,7 @@ namespace aw_im
             {
                 int d_nivesc = int.Parse(Request.Form["i_inv_nivesc"]);
                 int d_gradesc = int.Parse(Request.Form["i_inv_gradesc"]);
+                int d_periodo = int.Parse(Request.Form["s_periodo_inv"]);
 
                 string d_inv_costo = Request.Form["i_inv_costo"];
                 string d_inv_cat = Request.Form["i_inv_cat"];
@@ -2114,183 +2777,20 @@ namespace aw_im
                 {
                     Mensaje("Favor de seleccionar una Acción");
 
-                    guarda_inventario(d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
+                    guarda_inventario(d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat, d_periodo);
                 }
                 else
                 {
-                    edita_inventario(inv_f, d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat);
+                    edita_inventario(inv_f, d_nivesc, d_gradesc, d_inv_costo, dd_inv_cat, dd_inv_desc, dd_inv_carat, d_periodo);
                 }
             }
         }
 
         protected void gv_inv_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
-        }
-
-        protected void gv_inv_RowCommand(object sender, GridViewCommandEventArgs e)
-        {
-            est_inv = 2;
-            div_i_inv.Visible = true;
-            if (e.CommandName == "btn_inv_inv")
-            {
-                try
-                {
-                    GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
-
-                    inv_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
-
-                    using (bd_imEntities m_inv = new bd_imEntities())
-                    {
-                        var i_inv = (from i_i in m_inv.inf_inv
-                                     join i_ei in m_inv.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                                     join i_ge in m_inv.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                                     join i_ne in m_inv.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-                                     where i_i.inventario_ID == inv_f
-                                     select new
-                                     {
-                                         i_i.inventario_ID,
-                                         i_i.cod_inv,
-                                         i_ei.est_inv_desc,
-                                         i_i.grado_escolar_ID,
-                                         i_ge.grado_escolar_desc,
-                                         i_ne.nivel_escolar_ID,
-                                         i_ne.nivel_escolar_desc,
-                                         i_i.categoria,
-                                         i_i.caracteristica,
-                                         i_i.registro,
-                                         i_i.costo,
-                                         i_i.inv_desc
-                                     }).ToList();
-
-                        if (i_inv.Count == 0)
-                        {
-                            gv_inv.DataSource = i_inv;
-                            gv_inv.DataBind();
-                            gv_inv.Visible = true;
-                            gv_inv.Visible = true;
-
-                            Mensaje("Inventario no encontrado.");
-                        }
-                        else
-                        {
-                            gv_inv.DataSource = i_inv;
-                            gv_inv.DataBind();
-                            gv_inv.Visible = true;
-                            gv_inv.Visible = true;
-                        }
-
-                        i_inv_costo.Value = Math.Round(Convert.ToDecimal(i_inv[0].costo.ToString()), 0).ToString();
-                        i_inv_cat.Value = i_inv[0].categoria;
-                        i_inv_desc.Value = i_inv[0].inv_desc;
-                        i_inv_caract.Value = i_inv[0].caracteristica;
-
-                        i_inv_nivesc.Items.Clear();
-                        i_inv_gradesc.Items.Clear();
-
-                        using (bd_imEntities m_ss = new bd_imEntities())
-                        {
-                            var i_ne = (from c in m_ss.fact_nivel_escolar
-                                        select c).OrderBy(x => x.nivel_escolar_ID).ToList();
-
-                            i_inv_nivesc.DataSource = i_ne;
-                            i_inv_nivesc.DataTextField = "nivel_escolar_desc";
-                            i_inv_nivesc.DataValueField = "nivel_escolar_ID";
-                            i_inv_nivesc.DataBind();
-
-                            int f_neID = int.Parse(i_inv[0].nivel_escolar_ID.ToString());
-
-                            i_inv_nivesc.Items.Insert(0, new ListItem("*Nivel", string.Empty));
-                            i_inv_nivesc.SelectedValue = f_neID.ToString();
-
-                            var i_ge = (from c in m_ss.fact_grado_escolar
-                                        where c.nivel_escolar_ID == f_neID
-                                        select c).OrderBy(x => x.nivel_escolar_ID).ToList();
-
-                            i_inv_gradesc.DataSource = i_ge;
-                            i_inv_gradesc.DataTextField = "grado_escolar_desc";
-                            i_inv_gradesc.DataValueField = "grado_escolar_ID";
-                            i_inv_gradesc.DataBind();
-
-                            i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
-
-                            i_inv_gradesc.Value = i_inv[0].grado_escolar_ID.ToString();
-                        }
-                    }
-                }
-                catch
-                { }
-            }
-        }
-
-        protected void gv_inv_RowDataBound(object sender, GridViewRowEventArgs e)
-        {
-            if (e.Row.RowType == DataControlRowType.DataRow)
-            {
-                Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
-                int est_id;
-
-                using (bd_imEntities m_est = new bd_imEntities())
-                {
-                    var i_est = (from md_usr in m_est.inf_inv
-                                 where md_usr.inventario_ID == f_ID
-                                 select new
-                                 {
-                                     md_usr.est_inv_ID,
-                                 }).FirstOrDefault();
-
-                    est_id = int.Parse(i_est.est_inv_ID.ToString());
-
-                    DropDownList ddl_est = (e.Row.FindControl("ddl_inv_estatus") as DropDownList);
-
-                    var tbl_sepomex = (from c in m_est.fact_est_inv
-                                       select c).ToList();
-
-                    ddl_est.DataSource = tbl_sepomex;
-
-                    ddl_est.DataTextField = "est_inv_desc";
-                    ddl_est.DataValueField = "est_inv_ID";
-                    ddl_est.DataBind();
-                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
-                    ddl_est.SelectedValue = est_id.ToString();
-                }
-            }
-        }
-
-        protected void i_inv_nivesc_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            int int_nivesc = int.Parse(i_inv_nivesc.SelectedValue);
-
-            i_inv_gradesc.Items.Clear();
-
-            using (bd_imEntities m_ss = new bd_imEntities())
-            {
-                var i_ma = (from c in m_ss.fact_grado_escolar
-                            where c.nivel_escolar_ID == int_nivesc
-                            select c).ToList();
-
-                i_inv_gradesc.DataSource = i_ma;
-                i_inv_gradesc.DataTextField = "grado_escolar_desc";
-                i_inv_gradesc.DataValueField = "grado_escolar_ID";
-                i_inv_gradesc.DataBind();
-
-                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
-            }
-        }
-
-        protected void lkb_inv_agregar_Click(object sender, EventArgs e)
-        {
-            ctrl_inv();
-            est_inv = 1;
-            gv_inv.Visible = false;
-            div_i_inv.Visible = true;
-            i_cnt_buscar.Text = string.Empty;
-        }
-
-        protected void lkb_inv_buscar_Click(object sender, EventArgs e)
-        {
+            gv_inv.PageIndex = e.NewPageIndex;
             div_i_inv.Visible = false;
             string f_busqueda = string.Empty;
-            int f_usrp = 0;
 
             if (string.IsNullOrEmpty(i_inv_buscar.Text))
             {
@@ -2303,11 +2803,10 @@ namespace aw_im
                     f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
 
                     {
-                        if (int_idperf == 3)
-                            f_usrp = 2;
+                        if (int_idperf == 3) ;
                     }
 
-                    using (bd_imEntities md_fb = new bd_imEntities())
+                    using (db_imEntities md_fb = new db_imEntities())
                     {
                         var i_f_b = (from i_i in md_fb.inf_inv
                                      join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
@@ -2354,15 +2853,290 @@ namespace aw_im
                         string d_rub = f_busqueda;
                         String[] de_rub = d_rub.Trim().Split(char_s);
 
-                        n_fv = de_rub[1].Trim();
+                        n_fv = de_rub[3].Trim();
 
-                        using (bd_imEntities m_usrf = new bd_imEntities())
+                        using (db_imEntities m_usrf = new db_imEntities())
                         {
                             var i_f_b = (from i_i in m_usrf.inf_inv
                                          join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
                                          join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
                                          join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
-                                         where i_i.caracteristica == n_fv
+                                         where i_i.cod_inv == n_fv
+                                         select new
+                                         {
+                                             i_i.inventario_ID,
+                                             i_i.cod_inv,
+                                             i_ei.est_inv_desc,
+                                             i_ge.grado_escolar_desc,
+                                             i_ne.nivel_escolar_desc,
+                                             i_i.categoria,
+                                             i_i.caracteristica,
+                                             i_i.registro,
+                                         }).ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_inv.DataSource = i_f_b;
+                                gv_inv.DataBind();
+                                gv_inv.Visible = true;
+                                gv_inv.Visible = true;
+
+                                Mensaje("Inventario no encontrado.");
+                            }
+                            else
+                            {
+                                gv_inv.DataSource = i_f_b;
+                                gv_inv.DataBind();
+                                gv_inv.Visible = true;
+                                gv_inv.Visible = true;
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        ctrl_inv();
+                        div_i_inv.Visible = false;
+                        Mensaje("Inventario no encontrado.");
+                    }
+                }
+            }
+        }
+
+        protected void gv_inv_RowCommand(object sender, GridViewCommandEventArgs e)
+        {
+            est_inv = 2;
+            div_i_inv.Visible = true;
+            if (e.CommandName == "btn_inv_inv")
+            {
+                try
+                {
+                    GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
+
+                    inv_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
+
+                    using (db_imEntities m_inv = new db_imEntities())
+                    {
+                        var i_inv = (from i_i in m_inv.inf_inv
+                                     join i_ei in m_inv.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                     join i_ge in m_inv.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                     join i_ne in m_inv.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                     where i_i.inventario_ID == inv_f
+                                     select new
+                                     {
+                                         i_i.inventario_ID,
+                                         i_i.cod_inv,
+                                         i_ei.est_inv_desc,
+                                         i_i.grado_escolar_ID,
+                                         i_ge.grado_escolar_desc,
+                                         i_ne.nivel_escolar_ID,
+                                         i_ne.nivel_escolar_desc,
+                                         i_i.categoria,
+                                         i_i.caracteristica,
+                                         i_i.periodoID,
+                                         i_i.registro,
+                                         i_i.costo,
+                                         i_i.inv_desc
+                                     }).ToList();
+
+                        if (i_inv.Count == 0)
+                        {
+                            gv_inv.DataSource = i_inv;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+
+                            Mensaje("Inventario no encontrado.");
+                        }
+                        else
+                        {
+                            gv_inv.DataSource = i_inv;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+                        }
+
+                        i_inv_costo.Value = Math.Round(Convert.ToDecimal(i_inv[0].costo.ToString()), 0).ToString();
+                        i_inv_cat.Value = i_inv[0].categoria;
+                        i_inv_desc.Value = i_inv[0].inv_desc;
+                        i_inv_caract.Value = i_inv[0].caracteristica;
+                        s_periodo_inv.Value = i_inv[0].periodoID.ToString();
+                        i_inv_nivesc.Items.Clear();
+                        i_inv_gradesc.Items.Clear();
+
+                        using (db_imEntities m_ss = new db_imEntities())
+                        {
+                            var i_ne = (from c in m_ss.fact_nivel_escolar
+                                        select c).OrderBy(x => x.nivel_escolar_ID).ToList();
+
+                            i_inv_nivesc.DataSource = i_ne;
+                            i_inv_nivesc.DataTextField = "nivel_escolar_desc";
+                            i_inv_nivesc.DataValueField = "nivel_escolar_ID";
+                            i_inv_nivesc.DataBind();
+
+                            int f_neID = int.Parse(i_inv[0].nivel_escolar_ID.ToString());
+
+                            i_inv_nivesc.Items.Insert(0, new ListItem("*Nivel", string.Empty));
+                            i_inv_nivesc.SelectedValue = f_neID.ToString();
+
+                            var i_ge = (from c in m_ss.fact_grado_escolar
+                                        where c.nivel_escolar_ID == f_neID
+                                        select c).OrderBy(x => x.nivel_escolar_ID).ToList();
+
+                            i_inv_gradesc.DataSource = i_ge;
+                            i_inv_gradesc.DataTextField = "grado_escolar_desc";
+                            i_inv_gradesc.DataValueField = "grado_escolar_ID";
+                            i_inv_gradesc.DataBind();
+
+                            i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
+
+                            i_inv_gradesc.Value = i_inv[0].grado_escolar_ID.ToString();
+                        }
+                    }
+                }
+                catch
+                { }
+            }
+        }
+
+        protected void gv_inv_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
+                int est_id;
+
+                using (db_imEntities m_est = new db_imEntities())
+                {
+                    var i_est = (from md_usr in m_est.inf_inv
+                                 where md_usr.inventario_ID == f_ID
+                                 select new
+                                 {
+                                     md_usr.est_inv_ID,
+                                 }).FirstOrDefault();
+
+                    est_id = int.Parse(i_est.est_inv_ID.ToString());
+
+                    DropDownList ddl_est = (e.Row.FindControl("ddl_inv_estatus") as DropDownList);
+
+                    var tbl_sepomex = (from c in m_est.fact_est_inv
+                                       select c).ToList();
+
+                    ddl_est.DataSource = tbl_sepomex;
+
+                    ddl_est.DataTextField = "est_inv_desc";
+                    ddl_est.DataValueField = "est_inv_ID";
+                    ddl_est.DataBind();
+                    ddl_est.Items.Insert(0, new ListItem("Seleccionar", "0"));
+                    ddl_est.SelectedValue = est_id.ToString();
+                }
+            }
+        }
+
+        protected void i_inv_nivesc_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int int_nivesc = int.Parse(i_inv_nivesc.SelectedValue);
+
+            i_inv_gradesc.Items.Clear();
+
+            using (db_imEntities m_ss = new db_imEntities())
+            {
+                var i_ma = (from c in m_ss.fact_grado_escolar
+                            where c.nivel_escolar_ID == int_nivesc
+                            select c).ToList();
+
+                i_inv_gradesc.DataSource = i_ma;
+                i_inv_gradesc.DataTextField = "grado_escolar_desc";
+                i_inv_gradesc.DataValueField = "grado_escolar_ID";
+                i_inv_gradesc.DataBind();
+
+                i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
+            }
+        }
+
+        protected void lkb_inv_agregar_Click(object sender, EventArgs e)
+        {
+            ctrl_inv();
+            est_inv = 1;
+            gv_inv.Visible = false;
+            div_i_inv.Visible = true;
+            i_cnt_buscar.Text = string.Empty;
+        }
+
+        protected void lkb_inv_buscar_Click(object sender, EventArgs e)
+        {
+            div_i_inv.Visible = false;
+            string f_busqueda = string.Empty;
+
+            if (string.IsNullOrEmpty(i_inv_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+
+                    {
+                        if (int_idperf == 3) ;
+                    }
+
+                    using (db_imEntities md_fb = new db_imEntities())
+                    {
+                        var i_f_b = (from i_i in md_fb.inf_inv
+                                     join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                     join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                     join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+
+                                     select new
+                                     {
+                                         i_i.inventario_ID,
+                                         i_i.cod_inv,
+                                         i_ei.est_inv_desc,
+                                         i_ge.grado_escolar_desc,
+                                         i_ne.nivel_escolar_desc,
+                                         i_i.categoria,
+                                         i_i.caracteristica,
+                                         i_i.registro,
+                                     }).ToList();
+
+                        if (i_f_b.Count == 0)
+                        {
+                            gv_inv.DataSource = i_f_b;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+
+                            Mensaje("Inventario no encontrado.");
+                        }
+                        else
+                        {
+                            gv_inv.DataSource = i_f_b;
+                            gv_inv.DataBind();
+                            gv_inv.Visible = true;
+                            gv_inv.Visible = true;
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        f_busqueda = Request.Form["i_inv_buscar"].ToString().ToUpper().Trim();
+                        string n_fv;
+                        Char char_s = '|';
+                        string d_rub = f_busqueda;
+                        String[] de_rub = d_rub.Trim().Split(char_s);
+
+                        n_fv = de_rub[3].Trim();
+
+                        using (db_imEntities m_usrf = new db_imEntities())
+                        {
+                            var i_f_b = (from i_i in m_usrf.inf_inv
+                                         join i_ei in m_usrf.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                                         join i_ge in m_usrf.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                                         join i_ne in m_usrf.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                                         where i_i.cod_inv == n_fv
                                          select new
                                          {
                                              i_i.inventario_ID,
@@ -2412,8 +3186,9 @@ namespace aw_im
 
             i_inv_nivesc.Items.Clear();
             i_inv_gradesc.Items.Clear();
+            s_periodo_inv.Items.Clear();
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 var i_ma = (from c in m_ss.fact_nivel_escolar
                             select c).OrderBy(x => x.nivel_escolar_ID).ToList();
@@ -2426,10 +3201,20 @@ namespace aw_im
                 i_inv_nivesc.Items.Insert(0, new ListItem("*Nivel", string.Empty));
 
                 i_inv_gradesc.Items.Insert(0, new ListItem("*Grado", string.Empty));
+
+                var i_pe = (from c in m_ss.fact_periodo
+                            select c).OrderBy(x => x.periodoID).ToList();
+
+                s_periodo_inv.DataSource = i_pe;
+                s_periodo_inv.DataTextField = "periodo_desc";
+                s_periodo_inv.DataValueField = "periodoID";
+                s_periodo_inv.DataBind();
+
+                s_periodo_inv.Items.Insert(0, new ListItem("*Periodo", string.Empty));
             }
         }
 
-        private void edita_inventario(Guid inv_f, int d_nivesc, int d_gradesc, string d_inv_costo, string d_inv_cat, string d_inv_desc, string d_inv_carat)
+        private void edita_inventario(Guid inv_f, int d_nivesc, int d_gradesc, string d_inv_costo, string d_inv_cat, string d_inv_desc, string d_inv_carat, int d_periodo)
         {
             int int_ddl = 0;
             decimal dd_inv_costo = Decimal.Parse(d_inv_costo);
@@ -2444,7 +3229,7 @@ namespace aw_im
                 }
             }
 
-            using (var m_inv = new bd_imEntities())
+            using (var m_inv = new db_imEntities())
             {
                 var i_inv = (from c in m_inv.inf_inv
                              where c.inventario_ID == inv_f
@@ -2453,6 +3238,7 @@ namespace aw_im
                 i_inv.est_inv_ID = int_ddl;
                 i_inv.grado_escolar_ID = d_gradesc;
                 i_inv.categoria = d_inv_cat;
+                i_inv.periodoID = d_periodo;
                 i_inv.inv_desc = d_inv_desc;
                 i_inv.caracteristica = d_inv_carat;
                 i_inv.costo = dd_inv_costo;
@@ -2463,13 +3249,13 @@ namespace aw_im
             Mensaje("Datos actualizados con éxito");
         }
 
-        private void guarda_inventario(int d_nivesc, int d_gradesc, string d_inv_costo, string dd_inv_cat, string dd_inv_desc, string dd_inv_carat)
+        private void guarda_inventario(int d_nivesc, int d_gradesc, string d_inv_costo, string dd_inv_cat, string dd_inv_desc, string dd_inv_carat, int d_periodo)
         {
             Guid guid_inv = Guid.NewGuid();
             Guid guid_emp;
             string cod_usrf;
 
-            using (bd_imEntities m_usr = new bd_imEntities())
+            using (db_imEntities m_usr = new db_imEntities())
             {
                 var i_f_b = (from c in m_usr.inf_inv
                              select c).ToList();
@@ -2495,7 +3281,12 @@ namespace aw_im
                               where c.caracteristica == dd_inv_carat
                               select c).ToList();
 
-                var i_registro = new bd_imEntities();
+                var i_registro = new db_imEntities();
+
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
 
                 if (i_f_bf.Count == 0)
                 {
@@ -2508,6 +3299,7 @@ namespace aw_im
                         categoria = dd_inv_cat,
                         inv_desc = dd_inv_desc,
                         caracteristica = dd_inv_carat,
+                        periodoID = d_periodo,
                         costo = int.Parse(d_inv_costo),
                         centro_ID = empf_ID,
                         empresa_ID = guid_emp,
@@ -2531,6 +3323,7 @@ namespace aw_im
                         categoria = dd_inv_cat,
                         inv_desc = dd_inv_desc,
                         caracteristica = dd_inv_carat,
+                        periodoID = d_periodo,
                         costo = int.Parse(d_inv_costo),
                         centro_ID = empf_ID,
                         empresa_ID = guid_emp,
@@ -2566,7 +3359,8 @@ namespace aw_im
                 string i_telc = Request.Form["i_clte_telc"];
 
                 int i_tcc = int.Parse(Request.Form["i_clte_tcont"]);
-
+                DateTime d_ingreso = DateTime.Parse(Request.Form["i_ingreso"]);
+                int i_grado = int.Parse(Request.Form["i_gradoesc_alum"]);
                 string i_nombres = Request.Form["i_clte_nombres"];
                 string i_aparterno = Request.Form["i_clte_apaterno"];
                 string i_amaterno = Request.Form["i_clte_amaterno"];
@@ -2610,11 +3404,11 @@ namespace aw_im
 
                 if (est_clte == 1)
                 {
-                    guarda_clte(dd_nombresc, dd_apaternoc, dd_amaternoc, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc, cod_usr);
+                    guarda_clte(dd_nombresc, dd_apaternoc, dd_amaternoc, i_emailc, i_telc, i_grado, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, d_ingreso, dd_callenum, i_cp, i_colonia, i_tcc, cod_usr);
                 }
                 else
                 {
-                    edita_clte(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, dd_callenum, i_cp, i_colonia, i_tcc);
+                    edita_clte(dd_nombres, dd_apaterno, dd_amaterno, i_emailc, i_telc, i_grado, dd_nombres, dd_apaterno, dd_amaterno, i_email, i_tel, d_ingreso, dd_callenum, i_cp, i_colonia, i_tcc);
                 }
             }
         }
@@ -2623,7 +3417,7 @@ namespace aw_im
         {
             string str_cp = i_clte_cp.Value;
 
-            using (bd_imEntities db_sepomex = new bd_imEntities())
+            using (db_imEntities db_sepomex = new db_imEntities())
             {
                 var tbl_sepomex = (from c in db_sepomex.inf_sepomex
                                    where c.d_codigo == str_cp
@@ -2666,6 +3460,172 @@ namespace aw_im
 
         protected void gv_clte_PageIndexChanging(object sender, GridViewPageEventArgs e)
         {
+            gv_clte.PageIndex = e.NewPageIndex;
+            div_i_clte.Visible = false;
+            string f_busqueda = string.Empty;
+
+            if (string.IsNullOrEmpty(i_clte_buscar.Text))
+            {
+            }
+            else
+            {
+                f_busqueda = Request.Form["i_clte_buscar"].ToString().ToUpper().Trim();
+                if (f_busqueda == "TODO")
+                {
+                    f_busqueda = Request.Form["i_clte_buscar"].ToString().ToUpper().Trim();
+
+                    using (db_imEntities m_clte = new db_imEntities())
+                    {
+                        if (int_idperf <= 3)
+                        {
+                            var i_clte = (from i_i in m_clte.inf_clte
+                                          join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
+                                          select new
+                                          {
+                                              i_i.clte_ID,
+                                              i_i.cod_clte,
+                                              nombre_completo = i_i.nombres + " " + i_i.apaterno + " " + i_i.amaterno,
+                                              i_i.registro,
+                                          }).ToList();
+
+                            if (i_clte.Count == 0)
+                            {
+                                gv_clte.DataSource = i_clte;
+                                gv_clte.DataBind();
+                                gv_clte.Visible = true;
+                                gv_clte.Visible = true;
+
+                                Mensaje("Cliente no encontrado.");
+                            }
+                            else
+                            {
+                                gv_clte.DataSource = i_clte;
+                                gv_clte.DataBind();
+                                gv_clte.Visible = true;
+                                gv_clte.Visible = true;
+                            }
+                        }
+                        else
+                        {
+                            empf_ID = (Guid)Session["ss_idcnt"];
+                            var i_clte = (from i_i in m_clte.inf_clte
+                                          join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
+                                          where i_i.centro_ID == empf_ID
+                                          select new
+                                          {
+                                              i_i.clte_ID,
+                                              i_i.cod_clte,
+                                              nombre_completo = i_i.nombres + " " + i_i.apaterno + " " + i_i.amaterno,
+                                              i_i.registro,
+                                          }).ToList();
+
+                            if (i_clte.Count == 0)
+                            {
+                                gv_clte.DataSource = i_clte;
+                                gv_clte.DataBind();
+                                gv_clte.Visible = true;
+                                gv_clte.Visible = true;
+
+                                Mensaje("Cliente no encontrado.");
+                            }
+                            else
+                            {
+                                gv_clte.DataSource = i_clte;
+                                gv_clte.DataBind();
+                                gv_clte.Visible = true;
+                                gv_clte.Visible = true;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        f_busqueda = Request.Form["i_clte_buscar"].ToString().ToUpper().Trim();
+                        string n_fv;
+
+                        Char char_s = '|';
+                        string d_rub = f_busqueda;
+                        String[] de_rub = d_rub.Trim().Split(char_s);
+
+                        n_fv = de_rub[1].Trim();
+
+                        using (db_imEntities m_clte = new db_imEntities())
+                        {
+                            if (int_idperf <= 3)
+                            {
+                                var i_clte = (from i_i in m_clte.inf_clte
+                                              join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
+                                              where i_i.cod_clte == n_fv
+
+                                              select new
+                                              {
+                                                  i_i.clte_ID,
+                                                  i_i.cod_clte,
+                                                  nombre_completo = i_i.nombres + " " + i_i.apaterno + " " + i_i.amaterno,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_clte.Count == 0)
+                                {
+                                    gv_clte.DataSource = i_clte;
+                                    gv_clte.DataBind();
+                                    gv_clte.Visible = true;
+                                    gv_clte.Visible = true;
+
+                                    Mensaje("Cliente no encontrado.");
+                                }
+                                else
+                                {
+                                    gv_clte.DataSource = i_clte;
+                                    gv_clte.DataBind();
+                                    gv_clte.Visible = true;
+                                    gv_clte.Visible = true;
+                                }
+                            }
+                            else
+                            {
+                                empf_ID = (Guid)Session["ss_idcnt"];
+                                var i_clte = (from i_i in m_clte.inf_clte
+                                              join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
+                                              where i_i.cod_clte == n_fv
+                                              where i_i.centro_ID == empf_ID
+                                              select new
+                                              {
+                                                  i_i.clte_ID,
+                                                  i_i.cod_clte,
+                                                  nombre_completo = i_i.nombres + " " + i_i.apaterno + " " + i_i.amaterno,
+                                                  i_i.registro,
+                                              }).ToList();
+
+                                if (i_clte.Count == 0)
+                                {
+                                    gv_clte.DataSource = i_clte;
+                                    gv_clte.DataBind();
+                                    gv_clte.Visible = true;
+                                    gv_clte.Visible = true;
+
+                                    Mensaje("Cliente no encontrado.");
+                                }
+                                else
+                                {
+                                    gv_clte.DataSource = i_clte;
+                                    gv_clte.DataBind();
+                                    gv_clte.Visible = true;
+                                    gv_clte.Visible = true;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        ctrl_clte();
+                        div_i_clte.Visible = false;
+                        Mensaje("Cliente no encontrado.");
+                    }
+                }
+            }
         }
 
         protected void gv_clte_RowCommand(object sender, GridViewCommandEventArgs e)
@@ -2679,7 +3639,7 @@ namespace aw_im
                 GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
 
                 clte_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
-                using (bd_imEntities m_clte = new bd_imEntities())
+                using (db_imEntities m_clte = new db_imEntities())
                 {
                     var i_clte = (from i_i in m_clte.inf_clte
                                   join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
@@ -2690,11 +3650,13 @@ namespace aw_im
                                       i_i.clte_ID,
                                       i_i.cod_clte,
                                       nombre_completo = i_i.nombres + " " + i_i.apaterno + " " + i_i.amaterno,
+                                      i_i.grado_escolar_ID,
                                       i_i.nombres,
                                       i_i.apaterno,
                                       i_i.amaterno,
                                       i_i.email,
                                       i_i.telefono,
+                                      i_i.ingreso,
                                       i_i.callenum,
                                       i_i.d_codigo,
                                       i_i.id_asenta_cpcons,
@@ -2724,12 +3686,16 @@ namespace aw_im
                         gv_clte.Visible = true;
                     }
 
+                    DateTime f_ingreso = DateTime.MinValue;
+
+                    f_ingreso = Convert.ToDateTime(i_clte[0].ingreso);
+
                     i_clte_nombresc.Value = i_clte[0].nombresc;
                     i_clte_apaternoc.Value = i_clte[0].apaternoc;
                     i_clte_amaternoc.Value = i_clte[0].amaternoc;
                     i_clte_emailc.Value = i_clte[0].emailc;
                     i_clte_telc.Value = i_clte[0].tel;
-
+                    i_ingreso.Value = f_ingreso.ToString("yyyy-MM-dd");
                     i_clte_nombres.Value = i_clte[0].nombres;
                     i_clte_apaterno.Value = i_clte[0].apaterno;
                     i_clte_amaterno.Value = i_clte[0].amaterno;
@@ -2737,6 +3703,13 @@ namespace aw_im
                     i_clte_tel.Value = i_clte[0].telefono;
                     i_clte_callenum.Value = i_clte[0].callenum;
                     i_clte_cp.Value = i_clte[0].d_codigo;
+
+                    //var i_cltgrado = (from c in m_clte.fact_grado_escolar
+                    //            where c.grado_escolar_ID == i_clte[0].grado_escolar_ID
+                    //            select c).FirstOrDefault();
+                    //i_nivesc_alum.SelectedIndex = i_cltgrado.nivel_escolar_ID.ToString();
+
+                    //i_gradoesc_alum.Value = i_clte[0].grado_escolar_ID.ToString() ;
 
                     i_clte_tcont.Items.Clear();
                     i_clte_scolonia.Items.Clear();
@@ -2782,7 +3755,7 @@ namespace aw_im
                 Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_id;
 
-                using (bd_imEntities m_est = new bd_imEntities())
+                using (db_imEntities m_est = new db_imEntities())
                 {
                     var i_est = (from md_usr in m_est.inf_clte
                                  where md_usr.clte_ID == f_ID
@@ -2833,7 +3806,7 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_clte_buscar"].ToString().ToUpper().Trim();
 
-                    using (bd_imEntities m_clte = new bd_imEntities())
+                    using (db_imEntities m_clte = new db_imEntities())
                     {
                         if (int_idperf <= 3)
                         {
@@ -2866,6 +3839,7 @@ namespace aw_im
                         }
                         else
                         {
+                            empf_ID = (Guid)Session["ss_idcnt"];
                             var i_clte = (from i_i in m_clte.inf_clte
                                           join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
                                           where i_i.centro_ID == empf_ID
@@ -2909,7 +3883,7 @@ namespace aw_im
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_clte = new bd_imEntities())
+                        using (db_imEntities m_clte = new db_imEntities())
                         {
                             if (int_idperf <= 3)
                             {
@@ -2944,6 +3918,7 @@ namespace aw_im
                             }
                             else
                             {
+                                empf_ID = (Guid)Session["ss_idcnt"];
                                 var i_clte = (from i_i in m_clte.inf_clte
                                               join i_ei in m_clte.fact_est_clte on i_i.est_clte_ID equals i_ei.est_clte_ID
                                               where i_i.cod_clte == n_fv
@@ -3002,8 +3977,10 @@ namespace aw_im
 
             i_clte_tcont.Items.Clear();
             i_clte_scolonia.Items.Clear();
+            i_nivesc_alum.Items.Clear();
+            i_gradoesc_alum.Items.Clear();
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 var i_ma = (from c in m_ss.fact_clte_cont_tipo
                             select c).ToList();
@@ -3015,10 +3992,43 @@ namespace aw_im
 
                 i_clte_tcont.Items.Insert(0, new ListItem("Tipo Padre/Tutor", string.Empty));
                 i_clte_scolonia.Items.Insert(0, new ListItem("Colonia", string.Empty));
+
+                var i_niv = (from c in m_ss.fact_nivel_escolar
+                             select c).OrderBy(x => x.nivel_escolar_ID).ToList();
+
+                i_nivesc_alum.DataSource = i_niv;
+                i_nivesc_alum.DataTextField = "nivel_escolar_desc";
+                i_nivesc_alum.DataValueField = "nivel_escolar_ID";
+                i_nivesc_alum.DataBind();
+
+                i_nivesc_alum.Items.Insert(0, new ListItem("*Nivel", string.Empty));
+
+                i_gradoesc_alum.Items.Insert(0, new ListItem("*Grado", string.Empty));
             }
         }
 
-        private void edita_clte(string dd_nombresc, string dd_apaternoc, string dd_amaternoc, string i_emailc, string i_telc, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, int i_tcc)
+        protected void i_nivesc_alum_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int int_nivesc = int.Parse(i_nivesc_alum.SelectedValue);
+
+            i_gradoesc_alum.Items.Clear();
+
+            using (db_imEntities m_ss = new db_imEntities())
+            {
+                var i_ma = (from c in m_ss.fact_grado_escolar
+                            where c.nivel_escolar_ID == int_nivesc
+                            select c).ToList();
+
+                i_gradoesc_alum.DataSource = i_ma;
+                i_gradoesc_alum.DataTextField = "grado_escolar_desc";
+                i_gradoesc_alum.DataValueField = "grado_escolar_ID";
+                i_gradoesc_alum.DataBind();
+
+                i_gradoesc_alum.Items.Insert(0, new ListItem("*Grado", string.Empty));
+            }
+        }
+
+        private void edita_clte(string dd_nombresc, string dd_apaternoc, string dd_amaternoc, string i_emailc, string i_telc, int i_grado, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_email, string i_tel, DateTime d_ingreso, string dd_callenum, string i_cp, string i_colonia, int i_tcc)
         {
             int int_ddl = 0;
 
@@ -3032,27 +4042,31 @@ namespace aw_im
                 }
             }
 
-            using (var m_inv = new bd_imEntities())
+            using (var m_inv = new db_imEntities())
             {
                 var i_inv = (from c in m_inv.inf_clte
                              where c.clte_ID == clte_f
                              select c).FirstOrDefault();
 
                 i_inv.est_clte_ID = int_ddl;
-
+                i_inv.grado_escolar_ID = i_grado;
                 i_inv.email = i_email;
                 i_inv.telefono = i_tel;
                 i_inv.callenum = dd_callenum;
                 i_inv.d_codigo = i_cp;
+                i_inv.ingreso = d_ingreso;
                 i_inv.id_asenta_cpcons = i_colonia;
+                i_inv.nombres = dd_nombres;
+                i_inv.apaterno = dd_apaterno;
+                i_inv.amaterno = dd_amaterno;
 
                 var i_clte_cont = (from c in m_inv.inf_clte_contacto
                                    where c.clte_ID == clte_f
                                    select c).FirstOrDefault();
 
-                i_clte_cont.nombres = dd_nombres;
-                i_clte_cont.apaterno = dd_apaterno;
-                i_clte_cont.amaterno = dd_amaterno;
+                i_clte_cont.nombres = dd_nombresc;
+                i_clte_cont.apaterno = dd_apaternoc;
+                i_clte_cont.amaterno = dd_amaternoc;
                 i_clte_cont.email = i_emailc;
                 i_clte_cont.tel = i_telc;
 
@@ -3064,14 +4078,14 @@ namespace aw_im
             Mensaje("Datos actualizados con éxito");
         }
 
-        private void guarda_clte(string dd_nombresc, string dd_apaternoc, string dd_amaternoc, string i_emailc, string i_telc, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, int i_tcc, string cod_usr)
+        private void guarda_clte(string dd_nombresc, string dd_apaternoc, string dd_amaternoc, string i_emailc, string i_telc, int i_grado, string dd_nombres, string dd_apaterno, string dd_amaterno, string i_email, string i_tel, DateTime d_ingreso, string dd_callenum, string i_cp, string i_colonia, int i_tcc, string cod_usr)
         {
             Guid guid_clte_cont = Guid.NewGuid();
             Guid guid_clte = Guid.NewGuid();
             Guid guid_usr_clte = Guid.NewGuid();
             string cod_cltef = null;
             string dd_clave = encrypta.Encrypt("poc123");
-            using (bd_imEntities m_clte = new bd_imEntities())
+            using (db_imEntities m_clte = new db_imEntities())
             {
                 var i_clte = (from c in m_clte.inf_clte
 
@@ -3092,6 +4106,10 @@ namespace aw_im
                               where c.amaterno == dd_amaterno
                               select c).ToList();
 
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 if (i_f_bf.Count == 0)
                 {
                     var d_clte = new inf_clte
@@ -3099,11 +4117,13 @@ namespace aw_im
                         clte_ID = guid_clte,
                         est_clte_ID = 1,
                         cod_clte = cod_cltef,
+                        grado_escolar_ID = i_grado,
                         nombres = dd_nombres,
                         apaterno = dd_apaterno,
                         amaterno = dd_amaterno,
                         email = i_email,
                         telefono = i_tel,
+                        ingreso = d_ingreso,
                         callenum = dd_callenum,
                         d_codigo = i_cp,
                         id_asenta_cpcons = i_colonia,
@@ -3131,42 +4151,6 @@ namespace aw_im
 
                     if (i_f_b_v.Count == 0)
                     {
-                        var i_f_b_c = (from i_u in m_clte.inf_usuario
-                                       select i_u).ToList();
-
-                        var dn_usr = new inf_usuario
-                        {
-                            centro_ID = empf_ID,
-                            usr = cod_usr,
-                            clave = dd_clave.ToString(),
-                            correo_corp = cod_usr + "@intelimundo.com.mx",
-                            usuario_ID = guid_usr_clte,
-                            est_usr_ID = 1,
-                            cod_usr = cod_cltef,
-                            registro = DateTime.Now
-                        };
-
-                        var d_usr_p = new inf_usr_personales
-                        {
-                            usr_personales_ID = Guid.NewGuid(),
-                            nombres = dd_nombres,
-                            apaterno = dd_apaterno,
-                            amaterno = dd_amaterno,
-
-                            usuario_ID = guid_usr_clte,
-                            registro = DateTime.Now
-                        };
-
-                        var d_usr_rh = new inf_usr_rh
-                        {
-                            usr_rh_ID = Guid.NewGuid(),
-                            fecha_ingreso = DateTime.Now,
-                            area_ID = 4,
-                            perfil_ID = 7,
-                            usuario_ID = guid_usr_clte,
-                            registro = DateTime.Now
-                        };
-
                         var d_corp_ctrl = new inf_centro_ctrl
                         {
                             corporativo_ctrl_ID = Guid.NewGuid(),
@@ -3174,10 +4158,8 @@ namespace aw_im
                             usuario_ID = guid_usr_clte
                         };
 
-                        m_clte.inf_centro_ctrl.Add(d_corp_ctrl);
-                        m_clte.inf_usuario.Add(dn_usr);
-                        m_clte.inf_usr_personales.Add(d_usr_p);
-                        m_clte.inf_usr_rh.Add(d_usr_rh);
+                        //m_clte.inf_centro_ctrl.Add(d_corp_ctrl);
+
                         m_clte.inf_clte.Add(d_clte);
                         m_clte.inf_clte_contacto.Add(d_clte_cont);
                         m_clte.SaveChanges();
@@ -3203,7 +4185,7 @@ namespace aw_im
         {
             string str_cp = i_prov_cp.Value;
 
-            using (bd_imEntities db_sepomex = new bd_imEntities())
+            using (db_imEntities db_sepomex = new db_imEntities())
             {
                 var tbl_sepomex = (from c in db_sepomex.inf_sepomex
                                    where c.d_codigo == str_cp
@@ -3317,7 +4299,7 @@ namespace aw_im
                     GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
 
                     prov_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
-                    using (bd_imEntities m_prov = new bd_imEntities())
+                    using (db_imEntities m_prov = new db_imEntities())
                     {
                         var i_prov = (from i_i in m_prov.inf_proveedor
                                       join i_ei in m_prov.fact_est_prov on i_i.est_prov_ID equals i_ei.est_prov_ID
@@ -3418,7 +4400,7 @@ namespace aw_im
                 Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_id;
 
-                using (bd_imEntities m_est = new bd_imEntities())
+                using (db_imEntities m_est = new db_imEntities())
                 {
                     var i_est = (from md_usr in m_est.inf_proveedor
                                  where md_usr.prov_ID == f_ID
@@ -3469,7 +4451,7 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_prov_buscar"].ToString().ToUpper().Trim();
 
-                    using (bd_imEntities m_prov = new bd_imEntities())
+                    using (db_imEntities m_prov = new db_imEntities())
                     {
                         if (int_idperf <= 3)
                         {
@@ -3549,7 +4531,7 @@ namespace aw_im
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_prov = new bd_imEntities())
+                        using (db_imEntities m_prov = new db_imEntities())
                         {
                             if (int_idperf <= 3)
                             {
@@ -3643,7 +4625,7 @@ namespace aw_im
             i_prov_trfc.Items.Clear();
             i_prov_scolonia.Items.Clear();
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 var i_ma = (from c in m_ss.fact_rfc_tipo
                             select c).ToList();
@@ -3672,7 +4654,7 @@ namespace aw_im
                 }
             }
 
-            using (var m_inv = new bd_imEntities())
+            using (var m_inv = new db_imEntities())
             {
                 var i_inv = (from c in m_inv.inf_proveedor
                              where c.prov_ID == prov_f
@@ -3713,7 +4695,7 @@ namespace aw_im
             Guid guid_prov = Guid.NewGuid();
             string cod_provf = null;
 
-            using (bd_imEntities m_prov = new bd_imEntities())
+            using (db_imEntities m_prov = new db_imEntities())
             {
                 var i_prov = (from c in m_prov.inf_proveedor
 
@@ -3731,7 +4713,10 @@ namespace aw_im
                 var i_f_bf = (from c in m_prov.inf_proveedor
                               where c.razon_social == dd_prov_nom
                               select c).ToList();
-
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 if (i_f_bf.Count == 0)
                 {
                     var d_prov = new inf_proveedor
@@ -3878,7 +4863,7 @@ namespace aw_im
         {
             string str_cp = i_cnt_cp.Value;
 
-            using (bd_imEntities db_sepomex = new bd_imEntities())
+            using (db_imEntities db_sepomex = new db_imEntities())
             {
                 var tbl_sepomex = (from c in db_sepomex.inf_sepomex
                                    where c.d_codigo == str_cp
@@ -3934,7 +4919,7 @@ namespace aw_im
                     GridViewRow gvr = (GridViewRow)(((Button)e.CommandSource).NamingContainer);
                     cnt_f = Guid.Parse(gvr.Cells[0].Text.ToString().Trim());
 
-                    using (bd_imEntities m_cnt = new bd_imEntities())
+                    using (db_imEntities m_cnt = new db_imEntities())
                     {
                         var i_cnt = (from i_c in m_cnt.inf_centro
                                      join i_cc in m_cnt.inf_centro_ctrl on i_c.centro_ID equals i_cc.centro_ID
@@ -4035,7 +5020,7 @@ namespace aw_im
                 Guid f_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_ID;
 
-                using (bd_imEntities m_est = new bd_imEntities())
+                using (db_imEntities m_est = new db_imEntities())
                 {
                     var i_est = (from t_clte in m_est.inf_centro
                                  where t_clte.centro_ID == f_ID
@@ -4075,10 +5060,9 @@ namespace aw_im
         {
             div_i_cnt.Visible = false;
             string f_busqueda = string.Empty;
-            int f_usrp = 0;
+
             if (int_idperf == 3)
             {
-                f_usrp = 2;
             }
 
             int[] f_usr_c = null;
@@ -4095,7 +5079,7 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_cnt_buscar"].ToString().ToUpper().Trim();
 
-                    using (bd_imEntities m_cnt = new bd_imEntities())
+                    using (db_imEntities m_cnt = new db_imEntities())
                     {
                         var i_cnt = (from i_c in m_cnt.inf_centro
                                      join i_e in m_cnt.fact_est_cnt on i_c.est_cnt_ID equals i_e.est_cnt_ID
@@ -4141,14 +5125,14 @@ namespace aw_im
                         f_busqueda = Request.Form["i_cnt_buscar"].ToString().ToUpper().Trim();
 
                         string n_fv;
-                        Guid guid_usrid;
+
                         Char char_s = '|';
                         string d_rub = f_busqueda;
                         String[] de_rub = d_rub.Trim().Split(char_s);
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_cnt = new bd_imEntities())
+                        using (db_imEntities m_cnt = new db_imEntities())
                         {
                             var i_cnt = (from i_c in m_cnt.inf_centro
                                          join i_e in m_cnt.fact_est_cnt on i_c.est_cnt_ID equals i_e.est_cnt_ID
@@ -4212,7 +5196,7 @@ namespace aw_im
             i_cnt_slicencia.Items.Clear();
             i_cnt_scolonia.Items.Clear();
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 var i_ma = (from c in m_ss.fact_licencia
                             select c).OrderBy(x => x.licencia_desc).ToList();
@@ -4235,6 +5219,71 @@ namespace aw_im
             SendHtmlFormattedEmail(correo_e, asunto_e, cuerpo_e, correo_r, smtp_e, puerto_e, usuario_e, clave_e);
         }
 
+        protected void lkb_ResumenPeriodos_Click(object sender, EventArgs e)
+        {
+            string dt_rf = dtResumenPeriodos.Value;
+
+            String[] de_rub = dt_rf.Trim().Split('-');
+
+            int fyyyy = int.Parse(de_rub[0].Trim());
+            int fmm = int.Parse(de_rub[1].Trim());
+            try
+            {
+                if (int_idperf == 2)
+                {
+                    Guid CentroFiltroID = Guid.Parse(CentrosFiltro.Value);
+                    using (db_imEntities m_usuario = new db_imEntities())
+                    {
+                        empf_ID = (Guid)(Session["ss_idcnt"]);
+                        var i_usuario = (from i_u in m_usuario.fnTotalesMesGerentes(CentroFiltroID, fmm, fyyyy)
+                                         select i_u).ToList();
+
+                        string t_tipo_clte = i_usuario[0].Tipo;
+                        string t_cout_clte = i_usuario[0].d_count.ToString();
+                        string t_sum_clte = i_usuario[0].dd_sum.ToString();
+                        string t_tipo_vnta = i_usuario[2].Tipo;
+                        string t_cout_vnta = i_usuario[2].d_count.ToString();
+                        string t_sum_vnta = i_usuario[2].dd_sum.ToString();
+                        string t_tipo_comp = i_usuario[1].Tipo;
+                        string t_cout_comp = i_usuario[1].d_count.ToString();
+                        string t_sum_comp = i_usuario[1].dd_sum.ToString();
+
+                        LinkButton5.Text = t_cout_clte;
+                        LinkButton6.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
+                        LinkButton7.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
+                        LinkButton8.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
+                    }
+                }
+                else
+                {
+                    using (db_imEntities m_usuario = new db_imEntities())
+                    {
+                        empf_ID = (Guid)(Session["ss_idcnt"]);
+                        var i_usuario = (from i_u in m_usuario.fnTotalesMesGerentes(empf_ID, fmm, fyyyy)
+                                         select i_u).ToList();
+
+                        string t_tipo_clte = i_usuario[0].Tipo;
+                        string t_cout_clte = i_usuario[0].d_count.ToString();
+                        string t_sum_clte = i_usuario[0].dd_sum.ToString();
+                        string t_tipo_vnta = i_usuario[2].Tipo;
+                        string t_cout_vnta = i_usuario[2].d_count.ToString();
+                        string t_sum_vnta = i_usuario[2].dd_sum.ToString();
+                        string t_tipo_comp = i_usuario[1].Tipo;
+                        string t_cout_comp = i_usuario[1].d_count.ToString();
+                        string t_sum_comp = i_usuario[1].dd_sum.ToString();
+
+                        LinkButton5.Text = t_cout_clte;
+                        LinkButton6.Text = t_cout_vnta + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_vnta));
+                        LinkButton7.Text = t_cout_comp + ": " + string.Format("{0:C2}", decimal.Parse(t_sum_comp));
+                        LinkButton8.Text = string.Format("{0:C2}", decimal.Parse(t_sum_vnta) - decimal.Parse(t_sum_comp));
+                    }
+                }
+
+            }
+            catch
+            { }
+        }
+
         private void edita_centro(Guid cnt_f, string dd_cnt_nom, Guid i_licencia, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, string dd_nombres, string dd_apaterno, string dd_amaterno)
         {
             //int int_ddl = 0;
@@ -4249,7 +5298,7 @@ namespace aw_im
             //    }
             //}
 
-            //using (var m_inv = new bd_imEntities())
+            //using (var m_inv = new db_imEntities())
             //{
             //    var i_inv = (from c in m_inv.inf_centro
             //                 where c.centro_ID == cnt_f
@@ -4291,7 +5340,7 @@ namespace aw_im
             Guid guid_cnt = Guid.NewGuid();
             string cod_usrf = null, cod_cntf = null;
 
-            using (bd_imEntities m_usr = new bd_imEntities())
+            using (db_imEntities m_usr = new db_imEntities())
             {
                 var i_f_b = (from c in m_usr.inf_usuario
                              select c).ToList();
@@ -4330,9 +5379,13 @@ namespace aw_im
                               where c.centro_nom == dd_cnt_nom
                               select c).ToList();
 
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 if (i_f_cf.Count == 0)
                 {
-                    var i_registro = new bd_imEntities();
+                    var i_registro = new db_imEntities();
 
                     if (i_f_bf.Count == 0)
                     {
@@ -4592,7 +5645,7 @@ namespace aw_im
                     {
                         dd_clave = encrypta.Encrypt(Request.Form["i_clave"]);
 
-                        using (var m_usrs = new bd_imEntities())
+                        using (var m_usrs = new db_imEntities())
                         {
                             var i_f_b_v = (from i_u in m_usrs.inf_usuario
                                            where i_u.usuario_ID == usrf_ID
@@ -4637,7 +5690,7 @@ namespace aw_im
 
             div_i_usr.Visible = false;
             string f_busqueda = string.Empty;
-            int f_usrp = 0;
+            int f_usrp = 7;
 
             if (string.IsNullOrEmpty(i_usuario_buscar.Text))
             {
@@ -4649,41 +5702,72 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
 
-                    if (int_idperf == 3)
+                    using (db_imEntities md_fb = new db_imEntities())
                     {
-                        f_usrp = 2;
-                    }
-
-                    using (bd_imEntities md_fb = new bd_imEntities())
-                    {
-                        var i_f_b = (from i_u in md_fb.inf_usuario
-                                     join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                     join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
-                                     where i_rh.perfil_ID != f_usrp
-                                     where i_u.usuario_ID != usr_ID
-                                     select new
-                                     {
-                                         i_u.usuario_ID,
-                                         i_u.cod_usr,
-                                         nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
-                                         i_u.registro
-                                     }).OrderBy(x => x.cod_usr).ToList();
-
-                        if (i_f_b.Count == 0)
+                        if (int_idperf <= 3)
                         {
-                            gv_usrs.DataSource = i_f_b;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
+                            var i_f_b = (from i_u in md_fb.inf_usuario
+                                         join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                         join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
+                                         where i_rh.perfil_ID != f_usrp
+                                         where i_u.usuario_ID != usr_ID
+                                         select new
+                                         {
+                                             i_u.usuario_ID,
+                                             i_u.cod_usr,
+                                             nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                             i_u.registro
+                                         }).Distinct().ToList();
 
-                            Mensaje("Usuario no encontrado.");
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_usrs.DataSource = i_f_b;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+
+                                Mensaje("Usuario no encontrado.");
+                            }
+                            else
+                            {
+                                gv_usrs.DataSource = i_f_b;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+                            }
                         }
                         else
                         {
-                            gv_usrs.DataSource = i_f_b;
-                            gv_usrs.DataBind();
-                            gv_usrs.Visible = true;
-                            gv_usrs.Visible = true;
+                            empf_ID = (Guid)Session["ss_idcnt"];
+                            var i_f_b = (from i_u in md_fb.inf_usuario
+                                         join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                         join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
+                                         where i_u.centro_ID == empf_ID
+                                         where i_u.usuario_ID != usr_ID
+                                         select new
+                                         {
+                                             i_u.usuario_ID,
+                                             i_u.cod_usr,
+                                             nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                             i_u.registro
+                                         }).Distinct().ToList();
+
+                            if (i_f_b.Count == 0)
+                            {
+                                gv_usrs.DataSource = i_f_b;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+
+                                Mensaje("Usuario no encontrado.");
+                            }
+                            else
+                            {
+                                gv_usrs.DataSource = i_f_b;
+                                gv_usrs.DataBind();
+                                gv_usrs.Visible = true;
+                                gv_usrs.Visible = true;
+                            }
                         }
                     }
                 }
@@ -4700,40 +5784,80 @@ namespace aw_im
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_usrf = new bd_imEntities())
+                        using (db_imEntities m_usrf = new db_imEntities())
                         {
-                            var i_f_bf = (from c in m_usrf.inf_usuario
-                                          where c.cod_usr == n_fv
-                                          select c).FirstOrDefault();
-
-                            guid_usrid = i_f_bf.usuario_ID;
-
-                            var i_f_bff = (from i_u in m_usrf.inf_usuario
-                                           join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
-                                           where i_u.usuario_ID == guid_usrid
-                                           select new
-                                           {
-                                               i_u.usuario_ID,
-                                               i_u.cod_usr,
-                                               nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
-                                               i_u.registro
-                                           }).OrderBy(x => x.cod_usr).ToList();
-
-                            if (i_f_bff.Count == 0)
+                            if (int_idperf <= 3)
                             {
-                                gv_usrs.DataSource = i_f_bff;
-                                gv_usrs.DataBind();
-                                gv_usrs.Visible = true;
-                                gv_usrs.Visible = true;
+                                var i_f_bf = (from c in m_usrf.inf_usuario
+                                              where c.cod_usr == n_fv
+                                              select c).FirstOrDefault();
 
-                                Mensaje("Usuario no encontrado.");
+                                guid_usrid = i_f_bf.usuario_ID;
+
+                                var i_f_bff = (from i_u in m_usrf.inf_usuario
+                                               join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                               where i_u.usuario_ID == guid_usrid
+                                               select new
+                                               {
+                                                   i_u.usuario_ID,
+                                                   i_u.cod_usr,
+                                                   nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                                   i_u.registro
+                                               }).OrderBy(x => x.cod_usr).ToList();
+
+                                if (i_f_bff.Count == 0)
+                                {
+                                    gv_usrs.DataSource = i_f_bff;
+                                    gv_usrs.DataBind();
+                                    gv_usrs.Visible = true;
+                                    gv_usrs.Visible = true;
+
+                                    Mensaje("Usuario no encontrado.");
+                                }
+                                else
+                                {
+                                    gv_usrs.DataSource = i_f_bff;
+                                    gv_usrs.DataBind();
+                                    gv_usrs.Visible = true;
+                                    gv_usrs.Visible = true;
+                                }
                             }
                             else
                             {
-                                gv_usrs.DataSource = i_f_bff;
-                                gv_usrs.DataBind();
-                                gv_usrs.Visible = true;
-                                gv_usrs.Visible = true;
+                                var i_f_bf = (from c in m_usrf.inf_usuario
+                                              where c.cod_usr == n_fv
+                                              select c).FirstOrDefault();
+
+                                guid_usrid = i_f_bf.usuario_ID;
+                                empf_ID = (Guid)Session["ss_idcnt"];
+                                var i_f_bff = (from i_u in m_usrf.inf_usuario
+                                               join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
+                                               where i_u.usuario_ID == guid_usrid
+                                               where i_u.centro_ID == empf_ID
+                                               select new
+                                               {
+                                                   i_u.usuario_ID,
+                                                   i_u.cod_usr,
+                                                   nom_comp = i_up.nombres + " " + i_up.apaterno + " " + i_up.amaterno,
+                                                   i_u.registro
+                                               }).OrderBy(x => x.cod_usr).ToList();
+
+                                if (i_f_bff.Count == 0)
+                                {
+                                    gv_usrs.DataSource = i_f_bff;
+                                    gv_usrs.DataBind();
+                                    gv_usrs.Visible = true;
+                                    gv_usrs.Visible = true;
+
+                                    Mensaje("Usuario no encontrado.");
+                                }
+                                else
+                                {
+                                    gv_usrs.DataSource = i_f_bff;
+                                    gv_usrs.DataBind();
+                                    gv_usrs.Visible = true;
+                                    gv_usrs.Visible = true;
+                                }
                             }
                         }
                     }
@@ -4762,7 +5886,7 @@ namespace aw_im
                     i_clave.Attributes.Remove("disabled");
                     i_emal_c.Attributes.Remove("disabled");
 
-                    using (bd_imEntities edm_usr = new bd_imEntities())
+                    using (db_imEntities edm_usr = new db_imEntities())
                     {
                         var i_f_bf = (from i_u in edm_usr.inf_usuario
                                       join i_uh in edm_usr.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
@@ -4863,7 +5987,7 @@ namespace aw_im
                 Guid usr_ID = Guid.Parse(e.Row.Cells[0].Text);
                 int est_id;
 
-                using (bd_imEntities m_usr = new bd_imEntities())
+                using (db_imEntities m_usr = new db_imEntities())
                 {
                     var i_f_b = (from md_usr in m_usr.inf_usuario
                                  where md_usr.usuario_ID == usr_ID
@@ -4908,7 +6032,7 @@ namespace aw_im
         {
             div_i_usr.Visible = false;
             string f_busqueda = string.Empty;
-            int f_usrp = 0;
+            int f_usrp = 7;
 
             if (string.IsNullOrEmpty(i_usuario_buscar.Text))
             {
@@ -4920,7 +6044,7 @@ namespace aw_im
                 {
                     f_busqueda = Request.Form["i_usuario_buscar"].ToString().ToUpper().Trim();
 
-                    using (bd_imEntities md_fb = new bd_imEntities())
+                    using (db_imEntities md_fb = new db_imEntities())
                     {
                         if (int_idperf <= 3)
                         {
@@ -4956,6 +6080,7 @@ namespace aw_im
                         }
                         else
                         {
+                            empf_ID = (Guid)Session["ss_idcnt"];
                             var i_f_b = (from i_u in md_fb.inf_usuario
                                          join i_up in md_fb.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
                                          join i_rh in md_fb.inf_usr_rh on i_u.usuario_ID equals i_rh.usuario_ID
@@ -5001,7 +6126,7 @@ namespace aw_im
 
                         n_fv = de_rub[1].Trim();
 
-                        using (bd_imEntities m_usrf = new bd_imEntities())
+                        using (db_imEntities m_usrf = new db_imEntities())
                         {
                             if (int_idperf <= 3)
                             {
@@ -5046,7 +6171,7 @@ namespace aw_im
                                               select c).FirstOrDefault();
 
                                 guid_usrid = i_f_bf.usuario_ID;
-
+                                empf_ID = (Guid)Session["ss_idcnt"];
                                 var i_f_bff = (from i_u in m_usrf.inf_usuario
                                                join i_up in m_usrf.inf_usr_personales on i_u.usuario_ID equals i_up.usuario_ID
                                                where i_u.usuario_ID == guid_usrid
@@ -5100,7 +6225,7 @@ namespace aw_im
                 }
             }
 
-            using (var m_usrs = new bd_imEntities())
+            using (var m_usrs = new db_imEntities())
             {
                 var i_f_bs_rh = (from c in m_usrs.inf_usr_rh
                                  where c.usuario_ID == usrf_ID
@@ -5140,12 +6265,15 @@ namespace aw_im
             Guid guid_usr = Guid.NewGuid();
             string cod_usr;
 
-            using (bd_imEntities m_usr = new bd_imEntities())
+            using (db_imEntities m_usr = new db_imEntities())
             {
                 var i_f_b_v = (from i_u in m_usr.inf_usuario
                                where i_u.usr == i_f_b
                                select i_u).ToList();
-
+                usr_ID = Guid.Empty;
+                empf_ID = Guid.Empty;
+                usr_ID = (Guid)(Session["ss_idusr"]);
+                empf_ID = (Guid)(Session["ss_idcnt"]);
                 if (i_f_b_v.Count == 0)
                 {
                     var i_f_b_c = (from i_u in m_usr.inf_usuario
@@ -5239,15 +6367,25 @@ namespace aw_im
             else if (int_idperf == 4)
             {
                 f_usr_a = new int[] { 4 };
-                f_usr_p = new int[] { 5, 6, 7, 8, 9, 10 };
+                f_usr_p = new int[] { 5, 6, 8, 9, 10 };
             }
             else if (int_idperf == 5)
             {
                 f_usr_a = new int[] { 4 };
                 f_usr_p = new int[] { 4, 5, 6 };
             }
+            else if (int_idperf == 9)
+            {
+                f_usr_a = new int[] { 4 };
+                f_usr_p = new int[] { 7, 9, 10 };
+            }
+            else if (int_idperf == 10)
+            {
+                f_usr_a = new int[] { 4 };
+                f_usr_p = new int[] { 7, 9, 10 };
+            }
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 i_nombres.Value = string.Empty;
                 i_apaterno.Value = string.Empty;
@@ -5309,7 +6447,7 @@ namespace aw_im
             int i_puerto = int.Parse(Request.Form["i_puerto"]);
 
             TextInfo t_asunto = new CultureInfo("es-MX", false).TextInfo;
-            using (var m_inv = new bd_imEntities())
+            using (var m_inv = new db_imEntities())
             {
                 var i_inv = (from c in m_inv.inf_email_env
                              select c).FirstOrDefault();
@@ -5329,7 +6467,7 @@ namespace aw_im
 
         private void ctrl_config()
         {
-            using (bd_imEntities m_comp = new bd_imEntities())
+            using (db_imEntities m_comp = new db_imEntities())
             {
                 var i_comp = (from i_i in m_comp.inf_email_env
                               select new
@@ -5354,13 +6492,13 @@ namespace aw_im
         #endregion configuración de envío
 
         #region rpt_ventas
+
         private void defual_rpt(Guid vnta_ID)
         {
-
             vnta_ID = (Guid)(Session["vntaf_ID"]);
             DataSet ds00 = new DataSet();
 
-            using (bd_imEntities m_vnta = new bd_imEntities())
+            using (db_imEntities m_vnta = new db_imEntities())
             {
                 var i_vnta = (from t_clte in m_vnta.fn_tbl_remision(vnta_ID)
                               select t_clte).ToList();
@@ -5410,10 +6548,8 @@ namespace aw_im
             Response.AddHeader("content-disposition", "attachment; filename=" + "" + nombre_rpt + "" + "." + extension);
             Response.BinaryWrite(bytes); // create the file
             Response.Flush(); // send it to the client to download
-
-       
-
         }
-        #endregion
+
+        #endregion rpt_ventas
     }
 }

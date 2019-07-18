@@ -11,8 +11,7 @@ namespace aw_im
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-            try
-            {
+          
                 if (!IsPostBack)
                 {
                     inf_demp();
@@ -20,16 +19,15 @@ namespace aw_im
                 else
                 {
                 }
-            }
-            catch
-            {
-                Response.Redirect("acceso.aspx");
-            }
+       
         }
 
         private void inf_demp()
         {
-            using (var m_emp = new bd_imEntities())
+            
+
+
+            using (var m_emp = new db_imEntities())
             {
                 var i_env = (from i_e in m_emp.inf_email_env
                              select i_e).ToList();
@@ -64,7 +62,7 @@ namespace aw_im
             try
 
             {
-                using (var m_usr = new bd_imEntities())
+                using (var m_usr = new db_imEntities())
                 {
                     var i_usr = (from i_u in m_usr.inf_usuario
                                  join i_uh in m_usr.inf_usr_rh on i_u.usuario_ID equals i_uh.usuario_ID
@@ -79,8 +77,11 @@ namespace aw_im
                     cod_perf = i_usr[0].perfil_ID;
                     usrf_ID = i_usr[0].usuario_ID;
                     pass_qa = i_usr[0].clave;
+                    string dos = "fGVifCvpWWGgKTZ46axSOQ==";
 
-                    using (var m_corp = new bd_imEntities())
+
+                    string pass_de = encrypta.Decrypt(dos);
+                    using (var m_corp = new db_imEntities())
                     {
                         var d_corp = (from i_corp in m_corp.inf_centro
                                       select i_corp).ToList();
@@ -108,6 +109,10 @@ namespace aw_im
                                     Session["ss_idusr"] = usrf_ID;
                                     switch (cod_perf)
                                     {
+                                        case 1:
+
+                                            Response.Redirect("pnl_control.aspx");
+                                            break;
                                         case 2:
                                       
                                             Response.Redirect("pnl_control.aspx");
@@ -146,11 +151,11 @@ namespace aw_im
                                             break;
                                         case 9:
 
-                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
+                                            Response.Redirect("pnl_control.aspx");
                                             break;
                                         case 10:
 
-                                            Mensaje("Sin Acceso, favor de contactar al Corporativo");
+                                            Response.Redirect("pnl_control.aspx");
                                             break;
 
                                         default:

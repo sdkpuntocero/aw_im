@@ -23,6 +23,7 @@ namespace aw_im
         public System.Guid clte_ID { get; set; }
         public Nullable<int> est_clte_ID { get; set; }
         public string cod_clte { get; set; }
+        public Nullable<int> grado_escolar_ID { get; set; }
         public string nombres { get; set; }
         public string apaterno { get; set; }
         public string amaterno { get; set; }
@@ -32,6 +33,7 @@ namespace aw_im
         public string d_codigo { get; set; }
         public string id_asenta_cpcons { get; set; }
         public string comentarios { get; set; }
+        public Nullable<System.DateTime> ingreso { get; set; }
         public Nullable<System.DateTime> registro { get; set; }
         public System.Guid centro_ID { get; set; }
         public System.Guid usuario_ID { get; set; }

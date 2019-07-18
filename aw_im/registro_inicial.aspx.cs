@@ -40,7 +40,7 @@ namespace aw_im
             s_licencia.Items.Clear();
             scnt_colonia.Items.Clear();
 
-            using (bd_imEntities m_ss = new bd_imEntities())
+            using (db_imEntities m_ss = new db_imEntities())
             {
                 var i_ma = (from c in m_ss.fact_licencia
                             select c).OrderBy(x => x.licencia_desc).ToList();
@@ -60,7 +60,7 @@ namespace aw_im
         {
             string str_cp = i_cnt_cp.Value;
 
-            using (bd_imEntities db_sepomex = new bd_imEntities())
+            using (db_imEntities db_sepomex = new db_imEntities())
             {
                 var tbl_sepomex = (from c in db_sepomex.inf_sepomex
                                    where c.d_codigo == str_cp
@@ -153,7 +153,7 @@ namespace aw_im
                 Mensaje("Se requiere minimo 2 letras por cada campo(nombre,apellido paterno, apellido materno) para generar el usuario.");
             }
 
-            var i_registro = new bd_imEntities();
+            var i_registro = new db_imEntities();
 
             var d_emp = new inf_emp
             {
@@ -164,7 +164,7 @@ namespace aw_im
                 telefono = i_tel,
                 registro = DateTime.Now
             };
-            using (bd_imEntities m_usr = new bd_imEntities())
+            using (db_imEntities m_usr = new db_imEntities())
             {
                 var i_usr = (from c in m_usr.inf_usuario
                              select c).ToList();
@@ -252,7 +252,7 @@ namespace aw_im
             i_registro.inf_usr_contacto.Add(d_usr_cont);
             i_registro.SaveChanges();
 
-            using (var m_env = new bd_imEntities())
+            using (var m_env = new db_imEntities())
             {
                 var i_ev = (from c in m_env.inf_email_env
 
@@ -348,7 +348,7 @@ namespace aw_im
 
                 smtp.Host = smtp_e;
 
-                smtp.EnableSsl = true;
+                smtp.EnableSsl = false;
 
                 System.Net.NetworkCredential NetworkCred = new System.Net.NetworkCredential();
 

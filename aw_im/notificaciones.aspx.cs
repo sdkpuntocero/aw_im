@@ -44,7 +44,7 @@ namespace aw_im
 
             TextInfo t_asunto = new CultureInfo("es-MX", false).TextInfo;
 
-            var i_registro = new bd_imEntities();
+            var i_registro = new db_imEntities();
 
             var d_emp = new inf_email_env
             {

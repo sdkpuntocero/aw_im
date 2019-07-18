@@ -34,7 +34,7 @@ namespace aw_im
             vnta_ID = (Guid)(Session["vntaf_ID"]);
             DataSet ds00 = new DataSet();
 
-            using (bd_imEntities m_vnta = new bd_imEntities())
+            using (db_imEntities m_vnta = new db_imEntities())
             {
                 var i_vnta = (from t_clte in m_vnta.fn_tbl_remision(vnta_ID)
                               select t_clte).ToList();
@@ -53,7 +53,7 @@ namespace aw_im
             // Setup DataSet
 
             SqlDataAdapter da00 = new SqlDataAdapter();
-            SqlCommand cmd00 = new SqlCommand(@"SELECT * FROM [bd_im].[dbo].[v_rpt_remision] WHERE [vnta_ID] IN ('" + vnta_ID + "')");
+            SqlCommand cmd00 = new SqlCommand(@"SELECT * FROM [db_im].[dbo].[v_rpt_remision] WHERE [vnta_ID] IN ('" + vnta_ID + "')");
             cmd00.CommandType = CommandType.Text;
             cmd00.Connection = new SqlConnection(cn.cn_SQL);
             da00.SelectCommand = cmd00;
@@ -94,9 +94,10 @@ namespace aw_im
 
             System.Data.DataSet ds = new System.Data.DataSet();
             SqlDataAdapter da = new SqlDataAdapter();
-            SqlCommand cmd = new SqlCommand(@"SELECT [vnta_ID]
+            SqlCommand cmd = new SqlCommand(@"SELECT  [vnta_ID]
       ,[cod_vnta]
       ,[registro]
+      ,[ingreso]
       ,[cod_centro]
       ,[licencia_desc]
       ,[centro_nom]
@@ -125,13 +126,14 @@ namespace aw_im
       ,[cantidad]
       ,[porcentaje_desc]
       ,[total_inv]
-  FROM [bd_im].[dbo].[v_rpt_remision] WHERE [vnta_ID] IN ('" + vnta_ID + "')");
+      ,[FechaPago]
+  FROM [db_im].[dbo].[v_rpt_remision] WHERE [vnta_ID] IN ('" + vnta_ID + "')");
             cmd.CommandType = CommandType.Text;
             cmd.Connection = new SqlConnection(cn.cn_SQL);
             da.SelectCommand = cmd;
 
             string str_nrpt = null;
-            using (bd_imEntities m_vnta = new bd_imEntities())
+            using (db_imEntities m_vnta = new db_imEntities())
             {
                 var i_vnta = (from t_clte in m_vnta.fn_tbl_remision(vnta_ID)
                               select t_clte).ToList();

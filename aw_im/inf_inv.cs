@@ -21,6 +21,7 @@ namespace aw_im
         public string categoria { get; set; }
         public string inv_desc { get; set; }
         public string caracteristica { get; set; }
+        public Nullable<int> periodoID { get; set; }
         public Nullable<decimal> costo { get; set; }
         public Nullable<System.DateTime> registro { get; set; }
         public System.Guid centro_ID { get; set; }
