@@ -2146,15 +2146,6 @@ namespace aw_im {
         protected global::System.Web.UI.WebControls.Label lbl_TituloPDF;
         
         /// <summary>
-        /// Control iframe_pdf.
-        /// </summary>
-        /// <remarks>
-        /// Campo generado automáticamente.
-        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
-        /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlIframe iframe_pdf;
-        
-        /// <summary>
         /// Control card_pdf.
         /// </summary>
         /// <remarks>

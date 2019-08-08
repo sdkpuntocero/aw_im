@@ -1164,43 +1164,27 @@ namespace aw_im
 
         private void inf_servicios()
         {
-            using (db_imEntities md_fb = new db_imEntities())
+            ddlGradoServicio.Items.Clear();
+            dd_GrupoServicio.Items.Clear();
+
+
+            using (db_imEntities m_ss = new db_imEntities())
             {
-                var i_f_b = (from i_i in md_fb.inf_inv
-                             join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
-                             join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
-                             join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                var i_ma = (from c in m_ss.fact_nivel_escolar
+                            select c).OrderBy(x => x.nivel_escolar_ID).ToList();
 
-                             select new
-                             {
-                                 i_i.inventario_ID,
-                                 i_i.cod_inv,
-                                 i_ei.est_inv_desc,
-                                 i_ge.grado_escolar_desc,
-                                 i_ne.nivel_escolar_desc,
-                                 i_i.categoria,
-                                 i_i.caracteristica,
-                                 i_i.registro,
-                                 i_i.costo
-                             }).ToList();
+                ddlGradoServicio.DataSource = i_ma;
+                ddlGradoServicio.DataTextField = "nivel_escolar_desc";
+                ddlGradoServicio.DataValueField = "nivel_escolar_ID";
+                ddlGradoServicio.DataBind();
 
-                if (i_f_b.Count == 0)
-                {
-                    gv_serv.DataSource = i_f_b;
-                    gv_serv.DataBind();
-                    gv_serv.Visible = true;
-                    gv_serv.Visible = true;
+                ddlGradoServicio.Items.Insert(0, new ListItem("*Nivel", string.Empty));
 
-                    Mensaje("Inventario no encontrado.");
-                }
-                else
-                {
-                    gv_serv.DataSource = i_f_b;
-                    gv_serv.DataBind();
-                    gv_serv.Visible = true;
-                    gv_serv.Visible = true;
-                }
+                dd_GrupoServicio.Items.Insert(0, new ListItem("*Grado", string.Empty));
+
+ 
             }
+
 
             card_usrf.Visible = false;
             card_empf.Visible = false;
@@ -5282,6 +5266,71 @@ namespace aw_im
             }
             catch
             { }
+        }
+
+        protected void ddlGradoServicio_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int int_nivesc = int.Parse(ddlGradoServicio.SelectedValue);
+
+            dd_GrupoServicio.Items.Clear();
+
+            using (db_imEntities m_ss = new db_imEntities())
+            {
+                var i_ma = (from c in m_ss.fact_grado_escolar
+                            where c.nivel_escolar_ID == int_nivesc
+                            select c).ToList();
+
+                dd_GrupoServicio.DataSource = i_ma;
+                dd_GrupoServicio.DataTextField = "grado_escolar_desc";
+                dd_GrupoServicio.DataValueField = "grado_escolar_ID";
+                dd_GrupoServicio.DataBind();
+
+                dd_GrupoServicio.Items.Insert(0, new ListItem("*Grado", string.Empty));
+            }
+
+
+        }
+
+        protected void dd_GrupoServicio_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int int_nivesc = int.Parse(dd_GrupoServicio.SelectedValue);
+            using (db_imEntities md_fb = new db_imEntities())
+            {
+                var i_f_b = (from i_i in md_fb.inf_inv
+                             join i_ei in md_fb.fact_est_inv on i_i.est_inv_ID equals i_ei.est_inv_ID
+                             join i_ge in md_fb.fact_grado_escolar on i_i.grado_escolar_ID equals i_ge.grado_escolar_ID
+                             join i_ne in md_fb.fact_nivel_escolar on i_ge.nivel_escolar_ID equals i_ne.nivel_escolar_ID
+                             where i_ge.grado_escolar_ID == int_nivesc
+                             select new
+                             {
+                                 i_i.inventario_ID,
+                                 i_i.cod_inv,
+                                 i_ei.est_inv_desc,
+                                 i_ge.grado_escolar_desc,
+                                 i_ne.nivel_escolar_desc,
+                                 i_i.categoria,
+                                 i_i.caracteristica,
+                                 i_i.registro,
+                                 i_i.costo
+                             }).ToList();
+
+                if (i_f_b.Count == 0)
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+
+                    Mensaje("Inventario no encontrado.");
+                }
+                else
+                {
+                    gv_serv.DataSource = i_f_b;
+                    gv_serv.DataBind();
+                    gv_serv.Visible = true;
+                    gv_serv.Visible = true;
+                }
+            }
         }
 
         private void edita_centro(Guid cnt_f, string dd_cnt_nom, Guid i_licencia, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, string dd_nombres, string dd_apaterno, string dd_amaterno)

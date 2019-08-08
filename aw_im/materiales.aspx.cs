@@ -18,8 +18,8 @@ namespace aw_im
         {
             lbl_TituloPDF.Text = "Exploración de la Naturaleza y la Sociedad";
             string d_pdf = @"\material\preescolar\DesarrolloDeHabilidades\PreescolarDesarrolloDeHabilidades1.pdf";
-            iframe_pdf.Visible = true;
-            iframe_pdf.Attributes["src"] = d_pdf;
+            //iframe_pdf.Visible = true;
+            //iframe_pdf.Attributes["src"] = d_pdf;
         }
 
         //protected void lkbRecursos_Click(object sender, EventArgs e)

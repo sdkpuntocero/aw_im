@@ -105,11 +105,21 @@
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\yamm-master\.gitignore" />
+    <Content Include="Content\yamm-master\demo\css\demo.css" />
+    <Content Include="Content\yamm-master\demo\img\190.jpg" />
+    <Content Include="Content\yamm-master\demo\img\260.jpg" />
+    <Content Include="Content\yamm-master\demo\img\64x64.gif" />
+    <Content Include="Content\yamm-master\dist\yamm.css" />
+    <Content Include="Content\yamm-master\dist\yamm.min.css" />
+    <Content Include="Content\yamm-master\index.html" />
+    <Content Include="Content\yamm-master\test\basic.js" />
     <Content Include="estilos\estilos.css" />
     <Content Include="estilos\estilos_e.css" />
     <Content Include="estilos\style.css" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
+    <Content Include="HtmlPage1.html" />
     <Content Include="HtmlTemplate.html" />
     <Content Include="img\ajax-loader.gif" />
     <Content Include="img\ico_ve.png" />
@@ -176,6 +186,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="bower.json" />
+    <Content Include="WebForm1.aspx" />
     <EntityDeploy Include="m_im.edmx">
       <Generator>EntityModelCodeGenerator</Generator>
       <LastGenOutput>m_im.Designer.cs</LastGenOutput>
@@ -186,6 +197,20 @@
     <Content Include="material\preescolar\DesarrolloDeHabilidades\PreescolarDesarrolloDeHabilidades1.pdf" />
     <Content Include="material\recursos\librosdetexto\primergrado\1G_ExploracionDelaNaturalezaYLaSociedad.pdf" />
     <Content Include="material\recursos\librosdetexto\primergrado\1GS_ExploracionDelaNaturalezaYLaSociedad.pdf" />
+    <Content Include="Content\yamm-master\.github\CONTRIBUTING.md" />
+    <Content Include="Content\yamm-master\.github\ISSUE_TEMPLATE\bug_report.md" />
+    <Content Include="Content\yamm-master\.github\ISSUE_TEMPLATE\feature_request.md" />
+    <Content Include="Content\yamm-master\demo\pug\index.pug" />
+    <Content Include="Content\yamm-master\demo\pug\navbar-fixed.pug" />
+    <Content Include="Content\yamm-master\demo\pug\navbar-grid.pug" />
+    <Content Include="Content\yamm-master\demo\pug\navbar-more.pug" />
+    <Content Include="Content\yamm-master\LICENSE" />
+    <Content Include="Content\yamm-master\package-lock.json" />
+    <Content Include="Content\yamm-master\package.json" />
+    <Content Include="Content\yamm-master\README.md" />
+    <Content Include="Content\yamm-master\src\yamm.less" />
+    <Content Include="Content\yamm-master\src\yamm.scss" />
+    <Content Include="Content\yamm-master\src\yamm.styl" />
     <None Include="Properties\PublishProfiles\carpeta_local.pubxml" />
     <None Include="Properties\PublishProfiles\iis_dev.pubxml" />
     <None Include="Properties\PublishProfiles\online.pubxml" />
@@ -416,6 +441,13 @@
       <DependentUpon>rpt_remision.aspx</DependentUpon>
     </Compile>
     <Compile Include="SqlServerTypes\Loader.cs" />
+    <Compile Include="WebForm1.aspx.cs">
+      <DependentUpon>WebForm1.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="WebForm1.aspx.designer.cs">
+      <DependentUpon>WebForm1.aspx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

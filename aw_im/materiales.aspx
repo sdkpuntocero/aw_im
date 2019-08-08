@@ -8,13 +8,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-    <title>Collapsible sidebar using Bootstrap 4</title>
+
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous" />
     <!-- Bootstrap CSS CDN -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
     <!-- Our Custom CSS -->
     <link rel="stylesheet" href="sidebar/style.css">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="monitor-signature" content="monitor:player:html5" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
+    <meta name="Keywords" content="" />
+    <meta name="Description" content="PreescolarDesarrolloDeHabilidades1" />
+    <meta name="Generator" content="Flip PDF Professional 2.4.9.27 at http://www.flipbuilder.com" />
+    <link rel="image_src" href="material/preescolar/DesarrolloDeHabilidades/files/shot.png" />
+    <link rel="shortcut icon" href="material/preescolar/DesarrolloDeHabilidades/files/thumb/1.jpg" />
+    <link rel="apple-touch-icon" href="material/preescolar/DesarrolloDeHabilidades/files/thumb/1.jpg" />
+    <meta name="og:image" content="material/preescolar/DesarrolloDeHabilidades/files/shot.png" />
+    <meta property="og:image" content="material/preescolar/DesarrolloDeHabilidades/files/shot.png" />
+    <title>PreescolarDesarrolloDeHabilidades1</title>
+
+    <link rel="stylesheet" type="text/css" href="material/preescolar/DesarrolloDeHabilidades/mobile/style/style.css" />
+    <link rel="stylesheet" type="text/css" href="material/preescolar/DesarrolloDeHabilidades/mobile/style/player.css" />
+    <link rel="stylesheet" type="text/css" href="material/preescolar/DesarrolloDeHabilidades/mobile/style/phoneTemplate.css" />
+    <link rel="stylesheet" type="text/css" href="material/preescolar/DesarrolloDeHabilidades/mobile/style/template.css" />
+    
+
+    <script type="text/javascript" src="material/preescolar/DesarrolloDeHabilidades/mobile/javascript/config.js"></script>
     <!-- Font Awesome JS -->
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" integrity="sha384-tzzSw1/Vo+0N5UhStP3bvwWPq+uvzCMfrN1fEFe+xBmv1C/AtVX5K0uZtmcHitFZ" crossorigin="anonymous"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" integrity="sha384-6OIrr52G08NpOFSZdxxz1xdNSndlD4vdcf/q2myIUVO0VsqaGHJsB0RaBE01VTOY" crossorigin="anonymous"></script>
@@ -27,6 +50,21 @@
             });
         });
     </script>
+    <script type="text/javascript" src="material/preescolar/DesarrolloDeHabilidades/mobile/javascript/search_config.js"></script>
+    <script type="text/javascript" src="material/preescolar/DesarrolloDeHabilidades/mobile/javascript/bookmark_config.js"></script>
+    <script type="text/javascript" src="material/preescolar/DesarrolloDeHabilidades/mobile/javascript/LoadingJS.js"></script>
+
+    <script type="text/javascript" src="material/preescolar/DesarrolloDeHabilidades/mobile/javascript/main.js"></script>
+
+
+    <script type="text/javascript">
+
+
+        var sendvisitinfo = function (type, page) { };
+
+    </script>
+
+    <script type="text/javascript"></script>
     <style>
         .contenedor {
             position: absolute;
@@ -68,7 +106,7 @@
         <div class="container-fluid">
 
             <asp:UpdatePanel ID="up_bienvenida" runat="server" UpdateMode="Conditional">
-                <contenttemplate>
+                <ContentTemplate>
                     <nav class="navbar navbar-expand-md navbar-light bg-light">
                         <a class="navbar-brand pb-2" href="#">Intelimundo</a>
                         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
@@ -307,7 +345,6 @@
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton149" runat="server" Text="X"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton150" runat="server" Text="Y"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton151" runat="server" Text="Z"></asp:LinkButton>
-
                                                 </ul>
                                             </li>
                                             <li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="#">Abecedario Visual</a>
@@ -341,7 +378,6 @@
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton178" runat="server" Text="X"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton179" runat="server" Text="Y"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton180" runat="server" Text="Z"></asp:LinkButton>
-
                                                 </ul>
                                             </li>
                                             <li class="dropdown-submenu"><a class="dropdown-item dropdown-toggle" href="#">Consonantes</a>
@@ -375,7 +411,6 @@
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton207" runat="server" Text="X"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton208" runat="server" Text="Y"></asp:LinkButton>
                                                     <asp:LinkButton CssClass="dropdown-item" ID="LinkButton209" runat="server" Text="Z"></asp:LinkButton>
-
                                                 </ul>
                                             </li>
                                             <asp:LinkButton CssClass="dropdown-item" ID="LinkButton210" runat="server" Text="Grafías y Fonemoas"></asp:LinkButton>
@@ -441,7 +476,7 @@
                             </ul>
                         </div>
                     </nav>
-          
+
                     <div class="accordion" id="accordionExample">
 
                         <div class="card">
@@ -457,7 +492,7 @@
 
                             <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
                                 <div class="card-body">
-                                    <iframe id="iframe_pdf" src="" width="800" height="500" runat="server" visible="false"></iframe>
+                                    <noscript><div><hr/><ul><li><a href="material/preescolar/DesarrolloDeHabilidades/files/basic-html/index.html">Pages</a></li></ul><hr style="width:80%"/></div></noscript>
                                 </div>
                             </div>
                         </div>
@@ -475,23 +510,21 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                     <div class="card" runat="server" id="card_pdf">
                         <div class="card-header">
                         </div>
                         <div class="card-body">
-                                      <div class="contenedor">    <div class="pdf">
-        <object data="material/preescolar/DesarrolloDeHabilidades/PreescolarDesarrolloDeHabilidades1.pdf" type="application/PDF" width="850px" height="850px" align="right"></object>
-        </div>
-        
-        <div class="bloqueo">
-        </div>
-    </div>
+                            <div class="contenedor">
+                                <div class="pdf">
+                                    <object data="material/preescolar/DesarrolloDeHabilidades/PreescolarDesarrolloDeHabilidades1.pdf" type="application/PDF" width="850px" height="850px" align="right"></object>
+                                </div>
+
+                                <div class="bloqueo">
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-
 
                     <!-- jQuery CDN - Slim version (=without AJAX) -->
                     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
@@ -499,7 +532,7 @@
                     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
                     <!-- Bootstrap JS -->
                     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
-                </contenttemplate>
+                </ContentTemplate>
             </asp:UpdatePanel>
         </div>
     </form>

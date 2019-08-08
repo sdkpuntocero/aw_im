@@ -589,6 +589,24 @@ namespace aw_im {
         protected global::System.Web.UI.HtmlControls.HtmlGenericControl card_servicios;
         
         /// <summary>
+        /// Control ddlGradoServicio.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList ddlGradoServicio;
+        
+        /// <summary>
+        /// Control dd_GrupoServicio.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList dd_GrupoServicio;
+        
+        /// <summary>
         /// Control gv_serv.
         /// </summary>
         /// <remarks>

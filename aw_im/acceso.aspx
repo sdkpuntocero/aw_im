@@ -145,7 +145,7 @@
                 <br />
                 Contactar al Dpto. de Recursos Humanos
             </div>
-            <div class="modal" id="myModal">
+            <div class="modal" id="myModal" >
                 <div class="modal-dialog" role="document">
                     <asp:UpdatePanel ID="upModal" runat="server" ChildrenAsTriggers="false" UpdateMode="Conditional">
                         <ContentTemplate>

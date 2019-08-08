@@ -25,29 +25,38 @@ namespace aw_im
         private void inf_demp()
         {
             
-
-
-            using (var m_emp = new db_imEntities())
+            if(Request.Browser.Type.Contains("Chrome75"))
             {
-                var i_env = (from i_e in m_emp.inf_email_env
-                             select i_e).ToList();
-
-                if (i_env.Count == 0)
+                using (var m_emp = new db_imEntities())
                 {
-                    Response.Redirect("notificaciones.aspx");
-                }
-                else
-                {
-                    var i_emp = (from i_e in m_emp.inf_emp
+                    var i_env = (from i_e in m_emp.inf_email_env
                                  select i_e).ToList();
 
-                    if (i_emp.Count == 0)
+                    if (i_env.Count == 0)
                     {
-                        lkb_registro_inicial.Visible = true;
-                        Mensaje("Sin registro de empresa, favor de registrar una.");
+                        Response.Redirect("notificaciones.aspx");
+                    }
+                    else
+                    {
+                        var i_emp = (from i_e in m_emp.inf_emp
+                                     select i_e).ToList();
+
+                        if (i_emp.Count == 0)
+                        {
+                            lkb_registro_inicial.Visible = true;
+                         
+                            Mensaje("Sin registro de empresa, favor de registrar una.");
+                        }
                     }
                 }
             }
+            else
+            {
+                btn_acceso.Enabled = false;
+                Mensaje("Esta aplicación requiere Google Chrome.");
+            
+            }
+       
         }
 
         protected void btn_acceso_Click(object sender, EventArgs e)

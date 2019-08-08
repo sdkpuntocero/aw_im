@@ -14,26 +14,6 @@ namespace aw_im
 
         }
 
-        protected void LinkButton1_Click(object sender, EventArgs e)
-        {
-            lbl_TituloPDF.Text = "Español";
-            string d_pdf = "";
-            iframe_pdf.Visible = true;
-            iframe_pdf.Attributes["src"] = d_pdf;
-
-        }
-
-        protected void LinkButton56_Click(object sender, EventArgs e)
-        {
-            lbl_TituloPDF.Text = "Exploración de la Naturaleza y la Sociedad";
-            string d_pdf = @"\material\recursos\librosdetexto\primergrado\1G_ExploracionDelaNaturalezaYLaSociedad.pdf";
-            iframe_pdf.Visible = true;
-            iframe_pdf.Attributes["src"] = d_pdf;
-        }
-
-        protected void LinkButton34_Click(object sender, EventArgs e)
-        {
-            divLibrosdeTexto.Visible = true;
-        }
+       
     }
 }
