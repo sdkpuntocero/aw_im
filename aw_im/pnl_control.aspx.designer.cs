@@ -112,6 +112,24 @@ namespace aw_im {
         protected global::System.Web.UI.WebControls.LinkButton lkb_servicios;
         
         /// <summary>
+        /// Control li_recursos.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl li_recursos;
+        
+        /// <summary>
+        /// Control lkb_recursos.
+        /// </summary>
+        /// <remarks>
+        /// Campo generado automáticamente.
+        /// Para modificarlo, mueva la declaración del campo del archivo del diseñador al archivo de código subyacente.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.LinkButton lkb_recursos;
+        
+        /// <summary>
         /// Control li_vnta.
         /// </summary>
         /// <remarks>

@@ -10,10 +10,9 @@
     <link href="estilos/estilos_e.css" rel="stylesheet" />
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.min.js"> </script>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-
+    <script src="Scripts/jquery-3.4.1.js"></script>
+    <script src="Scripts/bootstrap.js"></script>
+    <script src="Scripts/popper.js"></script>
     <title></title>
 </head>
 <body>
@@ -37,7 +36,7 @@
         object {
             width: 100%;
             max-height: 100%;
-            height:100%;
+            height: 100%;
         }
     </style>
     <form runat="server">
@@ -145,55 +144,27 @@
                 <div class="row">
 
 
-                    <div class="col-6">
+                    <div class="col-12">
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="mb-0">
                                     <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                        <asp:Label ID="lbl_TituloPDF" runat="server" Text="Titulo"></asp:Label>
+                                        <asp:Label ID="lbl_TituloPDF" runat="server" Text="Desarrollo de Habilidades"></asp:Label>
                                     </button>
-
-                                    <a href="https://www.paypal.com/invoice/p/#Q4M4XBFSSDU6G369"><i class="far fa-credit-card"></i></a>
+                                
                                 </h2>
                             </div>
                             <div class="card-body">
-                                <div class="bloqueo ">
-                                    <div class="pdf">
-                                        <object data="material/preescolar/DesarrolloDeHabilidades/PreescolarDesarrolloDeHabilidades1.pdf" type="application/PDF" ></object>
-                                    </div>
-                                       
+                                <div class="menuContainer">
+                                    <iframe width="100%" height="100%" src="material/preescolar/DesarrolloDeHabilidades/PreescolarDesarrolloDeHabilidades1/index.html"></iframe>
                                 </div>
+
+                      
                             </div>
 
                         </div>
 
                     </div>
-                    <div class="col-6">
-                        <div class="card">
-                            <div class="card-header" id="headingOne">
-                                <h2 class="mb-0">
-                                    <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                        <asp:Label ID="Label1" runat="server" Text="Titulo"></asp:Label>
-                                    </button>
-
-                                    <a href="https://www.paypal.com/invoice/p/#Q4M4XBFSSDU6G369"><i class="far fa-credit-card"></i></a>
-                                </h2>
-                            </div>
-                            <div class="card-body">
-                                <div class="bloqueo">
-                                    <div class="pdf">
-                                        <object data="material/preescolar/DesarrolloDeHabilidades/PreescolarDesarrolloDeHabilidades1.pdf" type="application/PDF"></object>
-                                    </div>
-
-
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-
-
 
                 </div>
             </div>
@@ -202,7 +173,7 @@
         <div class="modal" id="myModal">
             <div class="modal-dialog" role="document">
                 <asp:UpdatePanel ID="upModal" runat="server" ChildrenAsTriggers="false" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="modal-content">
                             <div class="modal-header">
                                 <asp:Label ID="lblModalTitle" CssClass="modal-title" runat="server" Text=""></asp:Label>
@@ -216,18 +187,20 @@
                                 <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
                             </div>
                         </div>
-                    </contenttemplate>
+                    </ContentTemplate>
                 </asp:UpdatePanel>
             </div>
         </div>
     </form>
 
-    <script type="text/javascript">
-        $(document).ready(function () {
-            $('#sidebarCollapse').on('click', function () {
-                $('#sidebar').toggleClass('active');
-            });
-        });
-    </script>
+
 </body>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#sidebarCollapse').on('click', function () {
+            $('#sidebar').toggleClass('active');
+        });
+    });
+</script>
+
 </html>

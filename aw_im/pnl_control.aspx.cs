@@ -5333,6 +5333,11 @@ namespace aw_im
             }
         }
 
+        protected void lkb_recursos_Click(object sender, EventArgs e)
+        {
+            Response.Redirect("recursos.aspx");
+        }
+
         private void edita_centro(Guid cnt_f, string dd_cnt_nom, Guid i_licencia, string i_email, string i_tel, string dd_callenum, string i_cp, string i_colonia, string dd_nombres, string dd_apaterno, string dd_amaterno)
         {
             //int int_ddl = 0;

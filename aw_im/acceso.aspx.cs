@@ -11,52 +11,52 @@ namespace aw_im
     {
         protected void Page_Load(object sender, EventArgs e)
         {
-          
-                if (!IsPostBack)
-                {
-                    inf_demp();
-                }
-                else
-                {
-                }
-       
+
+            if (!IsPostBack)
+            {
+                inf_demp();
+            }
+            else
+            {
+            }
+
         }
 
         private void inf_demp()
         {
-            
-            if(Request.Browser.Type.Contains("Chrome75"))
+            //string navegador = left_right_mid.left(Request.Browser.Type, 6);
+            //if (navegador == "Chrome")
+            //{
+            using (var m_emp = new db_imEntities())
             {
-                using (var m_emp = new db_imEntities())
+                var i_env = (from i_e in m_emp.inf_email_env
+                             select i_e).ToList();
+
+                if (i_env.Count == 0)
                 {
-                    var i_env = (from i_e in m_emp.inf_email_env
+                    Response.Redirect("notificaciones.aspx");
+                }
+                else
+                {
+                    var i_emp = (from i_e in m_emp.inf_emp
                                  select i_e).ToList();
 
-                    if (i_env.Count == 0)
+                    if (i_emp.Count == 0)
                     {
-                        Response.Redirect("notificaciones.aspx");
-                    }
-                    else
-                    {
-                        var i_emp = (from i_e in m_emp.inf_emp
-                                     select i_e).ToList();
+                        lkb_registro_inicial.Visible = true;
 
-                        if (i_emp.Count == 0)
-                        {
-                            lkb_registro_inicial.Visible = true;
-                         
-                            Mensaje("Sin registro de empresa, favor de registrar una.");
-                        }
+                        Mensaje("Sin registro de empresa, favor de registrar una.");
                     }
                 }
             }
-            else
-            {
-                btn_acceso.Enabled = false;
-                Mensaje("Esta aplicación requiere Google Chrome.");
-            
-            }
-       
+            //}
+            //else
+            //{
+            //    btn_acceso.Enabled = false;
+            //    Mensaje("Esta aplicación requiere Google Chrome.");
+
+            //}
+
         }
 
         protected void btn_acceso_Click(object sender, EventArgs e)
@@ -123,18 +123,18 @@ namespace aw_im
                                             Response.Redirect("pnl_control.aspx");
                                             break;
                                         case 2:
-                                      
+
                                             Response.Redirect("pnl_control.aspx");
                                             break;
                                         case 3:
 
-                                       
+
 
                                             Response.Redirect("pnl_control.aspx");
                                             break;
 
                                         case 4:
-                                      
+
                                             Response.Redirect("pnl_control.aspx");
 
                                             break;
@@ -154,7 +154,7 @@ namespace aw_im
 
                                         case 8:
 
-                                     
+
 
                                             Response.Redirect("pnl_control.aspx");
                                             break;
@@ -204,7 +204,7 @@ namespace aw_im
         {
             TimeSpan TimeOut = new TimeSpan(0, 0, contexto.Session.Timeout, 0, 0);
 
-       
+
 
             if (contexto.Cache[usrf_ID.ToString()] == null) //La sesion esta libre.
                 contexto.Cache.Insert(usrf_ID.ToString(),

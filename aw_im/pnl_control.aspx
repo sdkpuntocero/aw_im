@@ -55,6 +55,9 @@
                     <li runat="server" id="li_servicios">
                         <asp:LinkButton ID="lkb_servicios" runat="server" Text="Servicios" OnClick="lkb_servicios_Click"></asp:LinkButton>
                     </li>
+                    <li runat="server" id="li_recursos">
+                        <asp:LinkButton ID="lkb_recursos" runat="server" Text="Recursos" OnClick="lkb_recursos_Click"></asp:LinkButton>
+                    </li>
                     <li runat="server" id="li_vnta">
                         <asp:LinkButton ID="lkb_ctrl_vnta" runat="server" Text="Ingresos" OnClick="lkb_ctrl_vnta_Click"></asp:LinkButton>
                     </li>
@@ -117,7 +120,7 @@
                 </nav>
 
                 <asp:UpdatePanel ID="up_usrf" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_usrf" visible="false">
                             <div class="card-header bg-primary">Actualizar datos de Usuario</div>
                             <div class="card-body">
@@ -146,12 +149,12 @@
                                 <asp:Button CssClass="btn btn-danger" ID="btn_usrf" runat="server" Text="Guardar" OnClick="btn_usrf_Click" TabIndex="11" />
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_empf" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
 
                         <div class="card border-primary" runat="server" id="card_empf" visible="false">
                             <div class="card-header bg-primary">Datos de Centro</div>
@@ -218,12 +221,12 @@
                                 <asp:Button CssClass="btn btn-danger" ID="btn_iemp" runat="server" Text="Guardar" OnClick="btn_iemp_Click" TabIndex="10" />
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_resumen" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_resumen">
                             <div class="card-header bg-primary">Resumen Total</div>
                             <div class="card-body">
@@ -254,7 +257,7 @@
                                         </div>
                                     </div>
                                     <div class="col-md-2 text-center">
-                                      <input type="month" class="form-control" runat="server" id="dtResumenPeriodos" required="required" placeholder="Mes" tabindex="15" title="Mes" />
+                                        <input type="month" class="form-control" runat="server" id="dtResumenPeriodos" required="required" placeholder="Mes" tabindex="15" title="Mes" />
                                         <asp:Button CssClass="btn btn-danger form-control" ID="btn_ResumenPeriodos" runat="server" Text="Consultar" TabIndex="11" OnClick="lkb_ResumenPeriodos_Click" />
                                     </div>
                                     <div class="col-md-2 text-center">
@@ -276,29 +279,29 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_servicios" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_servicios" visible="false">
                             <div class="card-header bg-primary">
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                      <div class="col-md-3">
-                                            <div class="form-group">
-                                                <asp:DropDownList CssClass="form-control input-box" ID="ddlGradoServicio" runat="server" TabIndex="5" required="required" AutoPostBack="true" OnSelectedIndexChanged="ddlGradoServicio_SelectedIndexChanged"></asp:DropDownList>
-                                            </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <asp:DropDownList CssClass="form-control input-box" ID="ddlGradoServicio" runat="server" TabIndex="5" required="required" AutoPostBack="true" OnSelectedIndexChanged="ddlGradoServicio_SelectedIndexChanged"></asp:DropDownList>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="form-group">
-                                                <asp:DropDownList CssClass="form-control input-box" ID="dd_GrupoServicio" runat="server" TabIndex="5" required="required" AutoPostBack="true" OnSelectedIndexChanged="dd_GrupoServicio_SelectedIndexChanged"></asp:DropDownList>
-                                                
-                                              
-                                            </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <asp:DropDownList CssClass="form-control input-box" ID="dd_GrupoServicio" runat="server" TabIndex="5" required="required" AutoPostBack="true" OnSelectedIndexChanged="dd_GrupoServicio_SelectedIndexChanged"></asp:DropDownList>
+
+
                                         </div>
+                                    </div>
                                     <div class="col-lg-12">
                                         <asp:GridView CssClass="table table-sm" ID="gv_serv" runat="server" AutoGenerateColumns="False" AllowPaging="True" CellPadding="3" ForeColor="Black" GridLines="Vertical" TabIndex="4" PageSize="15" OnPageIndexChanging="gv_serv_PageIndexChanging" BackColor="White" BorderColor="#999999" BorderStyle="Solid" BorderWidth="1px">
                                             <AlternatingRowStyle BackColor="#CCCCCC" />
@@ -330,12 +333,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_ventas" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_ventas" visible="false">
                             <div class="card-header bg-primary">
 
@@ -561,13 +564,13 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
+                    </ContentTemplate>
+                    <Triggers>
                         <asp:AsyncPostBackTrigger ControlID="btn_vnta" EventName="Click" />
-                    </triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_compras" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_compras" visible="false">
                             <div class="card-header bg-primary">
                                 <div class="text-right">
@@ -664,12 +667,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_inventario" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_inventario" visible="false">
                             <div class="card-header bg-primary">
 
@@ -781,12 +784,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_proveedores" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_proveedores" visible="false">
                             <div class="card-header bg-primary">
                                 <div class="text-right">
@@ -960,12 +963,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_clientes" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_clientes" visible="false">
                             <div class="card-header bg-primary">
                                 <div class="text-right">
@@ -1153,12 +1156,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_centros" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_centros" visible="false">
                             <div class="card-header bg-primary">
                                 <div class="text-right">
@@ -1314,12 +1317,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_usr" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_usr" visible="false">
                             <div class="card-header bg-primary">
                                 <div class="text-right">
@@ -1445,12 +1448,12 @@
                                 </div>
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_configuracion" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="card_configuracion" visible="false">
                             <div class="card-header bg-primary">Configuración e-mail de envío </div>
                             <div class="card-body">
@@ -1476,33 +1479,33 @@
                                 <asp:Button CssClass="btn btn-danger" ID="btn_ee" runat="server" Text="Guardar" TabIndex="7" Visible="true" OnClick="btn_ee_Click" />
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_rpt" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    <ContentTemplate>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
                 <asp:UpdatePanel ID="up_template" runat="server" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="card border-primary" runat="server" id="Div1" visible="false">
                             <div class="card-header bg-primary">En Construcción </div>
                             <div class="card-body">
                             </div>
                         </div>
-                    </contenttemplate>
-                    <triggers>
-                    </triggers>
+                    </ContentTemplate>
+                    <Triggers>
+                    </Triggers>
                 </asp:UpdatePanel>
             </div>
         </div>
         <div class="modal" id="myModal">
             <div class="modal-dialog" role="document">
                 <asp:UpdatePanel ID="upModal" runat="server" ChildrenAsTriggers="false" UpdateMode="Conditional">
-                    <contenttemplate>
+                    <ContentTemplate>
                         <div class="modal-content">
                             <div class="modal-header">
                                 <asp:Label ID="lblModalTitle" CssClass="modal-title" runat="server" Text=""></asp:Label>
@@ -1516,7 +1519,7 @@
                                 <button type="button" class="btn btn-primary" data-dismiss="modal">Aceptar</button>
                             </div>
                         </div>
-                    </contenttemplate>
+                    </ContentTemplate>
                 </asp:UpdatePanel>
             </div>
         </div>
